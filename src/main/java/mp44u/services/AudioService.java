@@ -21,8 +21,15 @@ public class AudioService {
 
     private static final String FFMPEG = "ffmpeg";
 
-    public void ffmpegConvertToM4a(Path inputPath, Path outputPath) throws Exception {
+    /**
+     * Run ffmpeg and convert audio file to m4a
+     * @param inputPath path to an audio file
+     * @param outputPath path to a m4a audio file
+     * @return path to m4a file
+     */
+    public Path ffmpegConvertToM4a(Path inputPath, Path outputPath) throws Exception {
         try {
+            //TODO: add -y to enable overwritting existing output files? ffmpeg will time out otherwise
             String inputFile = inputPath.toString();
             String input = "-i";
             String acodec = "-acodec";
@@ -52,7 +59,7 @@ public class AudioService {
                     ba, bitrate, audioSampling, audioSamplingRate, y, nostdin, dither, triangular, outputFile));
             CommandUtility.executeCommand(command);
 
-            //return Path.of(outputFile);
+            return Path.of(outputFile);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

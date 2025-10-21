@@ -8,7 +8,7 @@ import picocli.CommandLine.Command;
  * @author krwong
  */
 @Command(subcommands = {
-        MP44UCommand.class
+        Mp44uCommand.class
 })
 public class CLIMain {
     protected CLIMain() {
