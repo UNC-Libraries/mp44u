@@ -2,17 +2,21 @@ package mp44u;
 
 import mp44u.services.AudioService;
 import mp44u.services.VideoService;
+import org.apache.commons.io.FileUtils;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import picocli.CommandLine;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -35,6 +39,15 @@ public class Mp44uCommandIT {
 
         audioService = new AudioService();
         videoService = new VideoService();
+
+        if (Files.notExists(Paths.get("target/test_output"))) {
+            Files.createDirectory(Paths.get("target/test_output"));
+        }
+    }
+
+    @AfterEach
+    public void close() throws Exception {
+        FileUtils.deleteDirectory(new File("target/test_output"));
     }
 
     @Test
@@ -44,28 +57,24 @@ public class Mp44uCommandIT {
         String[] args = new String[] {
                 "mp44u",
                 "audio", "-i", testFile,
-                "-o", "src/test/resources/04007_G0010_2_2"
+                "-o", "target/test_output/04007_G0010_2_2"
         };
 
         executeExpectSuccess(args);
-
-        // ffmpeg is unable to create files in tmpdir unless tmpdir is mounted without noexec
-        // delete file
-        Files.delete(Path.of("src/test/resources/04007_G0010_2_2.m4a"));
-        assertFalse(Files.exists(Path.of("src/test/resources/04007_G0010_2_2.m4a")));
     }
 
     @Test
-    public void testFfmpegAudioFail() throws Exception {
+    public void testFfmpegAudioInputFileDoesNotExist() throws Exception {
         String testFile = "src/test/resources/test.mp3";
 
         String[] args = new String[] {
                 "mp44u",
                 "audio", "-i", testFile,
-                "-o", "src/test/resources/test"
+                "-o", "target/test_output/test"
         };
 
         executeExpectFailure(args);
+        assertTrue(Files.notExists(Path.of("target/test_output/test.m4a")));
     }
 
     @Test
@@ -75,27 +84,24 @@ public class Mp44uCommandIT {
         String[] args = new String[] {
                 "mp44u",
                 "video", "-i", testFile,
-                "-o", "src/test/resources/AMEN"
+                "-o", "target/test_output/AMEN"
         };
 
         executeExpectSuccess(args);
-
-        // delete file
-        Files.delete(Path.of("src/test/resources/AMEN.mp4"));
-        assertFalse(Files.exists(Path.of("src/test/resources/AMEN.mp4")));
     }
 
     @Test
-    public void testFfmpegVideoFail() throws Exception {
+    public void testFfmpegVideoInputFileDoesNotExist() throws Exception {
         String testFile = "src/test/resources/test.mp4";
 
         String[] args = new String[] {
                 "mp44u",
                 "video", "-i", testFile,
-                "-o", "src/test/resources/test"
+                "-o", "target/test_output/test_access"
         };
 
         executeExpectFailure(args);
+        assertTrue(Files.notExists(Path.of("target/test_output/test_access.mp4")));
     }
 
     protected void executeExpectSuccess(String[] args) {

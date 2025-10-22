@@ -1,9 +1,12 @@
 package mp44u.services;
 
+import mp44u.options.Mp44uOptions;
 import mp44u.util.CommandUtility;
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 
+import java.io.FileNotFoundException;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -23,14 +26,20 @@ public class VideoService {
 
     /**
      * Run ffmpeg and convert video file to mp4
-     * @param inputPath path to a video file
-     * @param outputPath path to a mp4 video file
+     * @param options
      * @return path to mp4 file
      */
-    public Path ffmpegConvertToMp4(Path inputPath, Path outputPath) throws Exception {
+    public Path ffmpegConvertToMp4(Mp44uOptions options) throws Exception {
+        if (options.getInputPath().equals(options.getOutputPath())) {
+            throw new IllegalArgumentException("Input and output paths cannot be the same");
+        }
+
+        if (Files.exists(options.getOutputPath())) {
+            throw new FileAlreadyExistsException("File already exists at " + options.getOutputPath());
+        }
+
         try {
-            //TODO: add -y to enable overwritting existing output files? ffmpeg will time out otherwise
-            String inputFile = inputPath.toString();
+            String inputFile = options.getInputPath().toString();
             String input = "-i";
             String mapChapters = "-map_chapters";
             String mapChaptersValue = "-1";
@@ -56,22 +65,18 @@ public class VideoService {
             String ditherMethodValue = "triangular";
             String movflags = "-movflags";
             String faststart = "faststart";
-            String outputFile;
+            Path outputPath = options.getOutputPath();
+            Path outputFile;
             String outputFilename = FilenameUtils.getBaseName(inputFile) + ".mp4";
-
-            // if input file is a mp4, add "_access" to output filename to avoid overwriting
-            if (FilenameUtils.getExtension(inputFile).equals("mp4")) {
-                outputPath = Path.of(outputPath.toString() + "_access");
-            }
 
             // if the output path is a directory
             if (Files.isDirectory(outputPath)) {
-                outputFile = outputPath + "/" + outputFilename;
+                outputFile = outputPath.resolve(outputFilename);
                 // if the output path is a file
             } else if (Files.exists(outputPath.getParent())) {
-                outputFile = outputPath + ".mp4";
+                outputFile = Path.of(outputPath + ".mp4");
             } else {
-                throw new Exception(outputPath + " does not exist.");
+                throw new FileNotFoundException(outputPath + " does not exist.");
             }
 
             List<String> command = new ArrayList<>(Arrays.asList(FFMPEG, input, inputFile,
@@ -82,10 +87,10 @@ public class VideoService {
                     crf, crfValue, maxrate, maxrateValue,
                     bufSize, bufSizeValue, pixFmt, pixFmtValue, acodec, acodecValue, ab, abValue,
                     ditherMethod, ditherMethodValue, movflags, faststart,
-                    outputFile));
+                    outputFile.toString()));
             CommandUtility.executeCommand(command);
 
-            return Path.of(outputFile);
+            return outputFile;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

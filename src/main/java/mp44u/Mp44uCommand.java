@@ -28,7 +28,7 @@ public class Mp44uCommand {
             description = "Transcode audio file to m4a")
     public int audio(@Mixin Mp44uOptions options) throws Exception {
         try {
-            audioService.ffmpegConvertToM4a(options.getInputPath(), options.getOutputPath());
+            audioService.ffmpegConvertToM4a(options);
             return 0;
         } catch (Exception e) {
             log.error("Failed to generate m4a file", e);
@@ -40,7 +40,7 @@ public class Mp44uCommand {
             description = "Transcode video file to mp4")
     public int video(@Mixin Mp44uOptions options) throws Exception {
         try {
-            videoService.ffmpegConvertToMp4(options.getInputPath(), options.getOutputPath());
+            videoService.ffmpegConvertToMp4(options);
             return 0;
         } catch (Exception e) {
             log.error("Failed to generate mp4 file", e);

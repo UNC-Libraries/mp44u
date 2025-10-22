@@ -1,9 +1,11 @@
 package mp44u.services;
 
+import mp44u.options.Mp44uOptions;
 import mp44u.util.CommandUtility;
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 
+import java.io.FileNotFoundException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -23,14 +25,12 @@ public class AudioService {
 
     /**
      * Run ffmpeg and convert audio file to m4a
-     * @param inputPath path to an audio file
-     * @param outputPath path to a m4a audio file
+     * @param options
      * @return path to m4a file
      */
-    public Path ffmpegConvertToM4a(Path inputPath, Path outputPath) throws Exception {
+    public Path ffmpegConvertToM4a(Mp44uOptions options) throws Exception {
         try {
-            //TODO: add -y to enable overwritting existing output files? ffmpeg will time out otherwise
-            String inputFile = inputPath.toString();
+            String inputFile = options.getInputPath().toString();
             String input = "-i";
             String acodec = "-acodec";
             String aacEncoder = "libfdk_aac";
@@ -42,24 +42,26 @@ public class AudioService {
             String nostdin = "-nostdin";
             String dither = "-dither_method";
             String triangular = "triangular";
-            String outputFile;
+            Path outputPath = options.getOutputPath();
+            Path outputFile;
             String outputFilename = FilenameUtils.getBaseName(inputFile) + ".m4a";
 
             // if the output path is a directory
             if (Files.isDirectory(outputPath)) {
-                outputFile = outputPath + "/" + outputFilename;
+                outputFile = outputPath.resolve(outputFilename);
                 // if the output path is a file
             } else if (Files.exists(outputPath.getParent())) {
-                outputFile = outputPath + ".m4a";
+                outputFile = Path.of(outputPath + ".m4a");
             } else {
-                throw new Exception(outputPath + " does not exist.");
+                throw new FileNotFoundException(outputPath + " does not exist.");
             }
 
             List<String> command = new ArrayList<>(Arrays.asList(FFMPEG, input, inputFile, acodec, aacEncoder,
-                    ba, bitrate, audioSampling, audioSamplingRate, y, nostdin, dither, triangular, outputFile));
+                    ba, bitrate, audioSampling, audioSamplingRate, y, nostdin, dither, triangular,
+                    outputFile.toString()));
             CommandUtility.executeCommand(command);
 
-            return Path.of(outputFile);
+            return outputFile;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
