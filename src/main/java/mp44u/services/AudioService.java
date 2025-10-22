@@ -2,12 +2,10 @@ package mp44u.services;
 
 import mp44u.options.Mp44uOptions;
 import mp44u.util.CommandUtility;
+import mp44u.util.FileService;
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 
-import java.io.FileNotFoundException;
-import java.nio.file.FileAlreadyExistsException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -43,26 +41,10 @@ public class AudioService {
         String dither = "-dither_method";
         String triangular = "triangular";
         Path outputPath = options.getOutputPath();
-        Path outputFile;
         String outputFilename = FilenameUtils.getBaseName(inputFile) + ".m4a";
+        Path outputFile = FileService.buildOutputFile(outputPath, outputFilename, ".m4a");
 
-        // if the output path is a directory
-        if (Files.isDirectory(outputPath)) {
-            outputFile = outputPath.resolve(outputFilename);
-            // if the output path is a file
-        } else if (Files.exists(outputPath.getParent())) {
-            outputFile = Path.of(outputPath + ".m4a");
-        } else {
-            throw new FileNotFoundException(outputPath + " does not exist.");
-        }
-
-        if (inputFile.equals(outputFile.toString())) {
-            throw new IllegalArgumentException("Input and output paths cannot be the same");
-        }
-
-        if (Files.exists(outputFile)) {
-            throw new FileAlreadyExistsException("File already exists at " + outputFile);
-        }
+        FileService.validateFiles(inputFile, outputFile);
 
         List<String> command = new ArrayList<>(Arrays.asList(FFMPEG, input, inputFile, acodec, aacEncoder,
                 ba, bitrate, audioSampling, audioSamplingRate, y, nostdin, dither, triangular,

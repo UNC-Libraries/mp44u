@@ -2,12 +2,10 @@ package mp44u.services;
 
 import mp44u.options.Mp44uOptions;
 import mp44u.util.CommandUtility;
+import mp44u.util.FileService;
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 
-import java.io.FileNotFoundException;
-import java.nio.file.FileAlreadyExistsException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -57,26 +55,10 @@ public class VideoService {
         String movflags = "-movflags";
         String faststart = "faststart";
         Path outputPath = options.getOutputPath();
-        Path outputFile;
         String outputFilename = FilenameUtils.getBaseName(inputFile) + ".mp4";
+        Path outputFile = FileService.buildOutputFile(outputPath, outputFilename, ".mp4");
 
-        // if the output path is a directory
-        if (Files.isDirectory(outputPath)) {
-            outputFile = outputPath.resolve(outputFilename);
-            // if the output path is a file
-        } else if (Files.exists(outputPath.getParent())) {
-            outputFile = Path.of(outputPath + ".mp4");
-        } else {
-            throw new FileNotFoundException(outputPath + " does not exist.");
-        }
-
-        if (inputFile.equals(outputFile.toString())) {
-            throw new IllegalArgumentException("Input and output paths cannot be the same");
-        }
-
-        if (Files.exists(outputFile)) {
-            throw new FileAlreadyExistsException("File already exists at " + outputFile);
-        }
+        FileService.validateFiles(inputFile, outputFile);
 
         List<String> command = new ArrayList<>(Arrays.asList(FFMPEG, input, inputFile,
                 mapChapters, mapChaptersValue,
