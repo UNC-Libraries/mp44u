@@ -10,7 +10,6 @@ import org.slf4j.Logger;
 import picocli.CommandLine;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -31,6 +30,7 @@ public class Mp44uCommandIT {
 
     private AudioService audioService;
     private VideoService videoService;
+    private Path testOutput = Paths.get("target/test_output");
 
     @BeforeEach
     public void setup() throws Exception {
@@ -40,14 +40,14 @@ public class Mp44uCommandIT {
         audioService = new AudioService();
         videoService = new VideoService();
 
-        if (Files.notExists(Paths.get("target/test_output"))) {
-            Files.createDirectory(Paths.get("target/test_output"));
+        if (Files.notExists(testOutput)) {
+            Files.createDirectory(testOutput);
         }
     }
 
     @AfterEach
     public void close() throws Exception {
-        FileUtils.deleteDirectory(new File("target/test_output"));
+        FileUtils.deleteDirectory(testOutput.toFile());
     }
 
     @Test
@@ -57,7 +57,7 @@ public class Mp44uCommandIT {
         String[] args = new String[] {
                 "mp44u",
                 "audio", "-i", testFile,
-                "-o", "target/test_output/04007_G0010_2_2"
+                "-o", testOutput.resolve("04007_G0010_2_2").toString()
         };
 
         executeExpectSuccess(args);
@@ -70,7 +70,7 @@ public class Mp44uCommandIT {
         String[] args = new String[] {
                 "mp44u",
                 "audio", "-i", testFile,
-                "-o", "target/test_output/test"
+                "-o", testOutput.resolve("test").toString()
         };
 
         executeExpectFailure(args);
@@ -84,7 +84,7 @@ public class Mp44uCommandIT {
         String[] args = new String[] {
                 "mp44u",
                 "video", "-i", testFile,
-                "-o", "target/test_output/AMEN"
+                "-o", testOutput.resolve("AMEN").toString()
         };
 
         executeExpectSuccess(args);
@@ -97,7 +97,7 @@ public class Mp44uCommandIT {
         String[] args = new String[] {
                 "mp44u",
                 "video", "-i", testFile,
-                "-o", "target/test_output/test_access"
+                "-o", testOutput.resolve("test_access").toString()
         };
 
         executeExpectFailure(args);

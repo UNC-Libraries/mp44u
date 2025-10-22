@@ -6,32 +6,34 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.File;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.MockitoAnnotations.openMocks;
 
 public class AudioServiceTest {
     private AutoCloseable closeable;
     private AudioService service;
+    private Path testOutput = Paths.get("target/test_output");
 
     @BeforeEach
     public void setup() throws Exception {
         closeable = openMocks(this);
         service = new AudioService();
 
-        if (Files.notExists(Paths.get("target/test_output"))) {
-            Files.createDirectory(Paths.get("target/test_output"));
+        if (Files.notExists(testOutput)) {
+            Files.createDirectory(testOutput);
         }
     }
 
     @AfterEach
     public void close() throws Exception {
-        FileUtils.deleteDirectory(new File("target/test_output"));
+        FileUtils.deleteDirectory(testOutput.toFile());
         closeable.close();
     }
 
@@ -40,12 +42,12 @@ public class AudioServiceTest {
         Path testFile = Path.of("src/test/resources/04007_G0010_2_2.mp3");
         Mp44uOptions options = new Mp44uOptions();
         options.setInputPath(testFile);
-        options.setOutputPath(Paths.get("target/test_output/04007_G0010_2_2"));
+        options.setOutputPath(testOutput.resolve("04007_G0010_2_2"));
 
         Path outputFile = service.ffmpegConvertToM4a(options);
 
         assertTrue(Files.exists(outputFile));
-        assertEquals(Path.of("target/test_output/04007_G0010_2_2.m4a"), outputFile);
+        assertEquals(testOutput.resolve("04007_G0010_2_2.m4a"), outputFile);
     }
 
     @Test
@@ -53,12 +55,12 @@ public class AudioServiceTest {
         Path testFile = Path.of("src/test/resources/3AudioTrack.aiff");
         Mp44uOptions options = new Mp44uOptions();
         options.setInputPath(testFile);
-        options.setOutputPath(Path.of("target/test_output/3AudioTrack"));
+        options.setOutputPath(testOutput.resolve("3AudioTrack"));
 
         Path outputFile = service.ffmpegConvertToM4a(options);
 
         assertTrue(Files.exists(outputFile));
-        assertEquals(Path.of("target/test_output/3AudioTrack.m4a"), outputFile);
+        assertEquals(testOutput.resolve("3AudioTrack.m4a"), outputFile);
     }
 
     @Test
@@ -66,12 +68,12 @@ public class AudioServiceTest {
         Path testFile = Path.of("src/test/resources/b00310.au");
         Mp44uOptions options = new Mp44uOptions();
         options.setInputPath(testFile);
-        options.setOutputPath(Path.of("target/test_output/b00310"));
+        options.setOutputPath(testOutput.resolve("b00310"));
 
         Path outputFile = service.ffmpegConvertToM4a(options);
 
         assertTrue(Files.exists(outputFile));
-        assertEquals(Path.of("target/test_output/b00310.m4a"), outputFile);
+        assertEquals(testOutput.resolve("b00310.m4a"), outputFile);
     }
 
     @Test
@@ -79,12 +81,12 @@ public class AudioServiceTest {
         Path testFile = Path.of("src/test/resources/14.wav");
         Mp44uOptions options = new Mp44uOptions();
         options.setInputPath(testFile);
-        options.setOutputPath(Path.of("target/test_output/14"));
+        options.setOutputPath(testOutput.resolve("14"));
 
         Path outputFile = service.ffmpegConvertToM4a(options);
 
         assertTrue(Files.exists(outputFile));
-        assertEquals(Path.of("target/test_output/14.m4a"), outputFile);
+        assertEquals(testOutput.resolve("14.m4a"), outputFile);
     }
 
     @Test
@@ -92,11 +94,25 @@ public class AudioServiceTest {
         Path testFile = Path.of("src/test/resources/DS400038.WMA");
         Mp44uOptions options = new Mp44uOptions();
         options.setInputPath(testFile);
-        options.setOutputPath(Path.of("target/test_output/DS400038"));
+        options.setOutputPath(testOutput.resolve("DS400038"));
 
         Path outputFile = service.ffmpegConvertToM4a(options);
 
         assertTrue(Files.exists(outputFile));
-        assertEquals(Path.of("target/test_output/DS400038.m4a"), outputFile);
+        assertEquals(testOutput.resolve("DS400038.m4a"), outputFile);
+    }
+
+    @Test
+    public void testFileAlreadyExists() throws Exception {
+        Files.createFile(testOutput.resolve("009.m4a"));
+        Path testFile = Path.of("src/test/resources/009.mp4");
+        Mp44uOptions options = new Mp44uOptions();
+        options.setInputPath(testFile);
+        options.setOutputPath(testOutput.resolve("009"));
+
+        var e = assertThrows(FileAlreadyExistsException.class, () -> {
+            service.ffmpegConvertToM4a(options);
+        });
+        assertTrue(e.getMessage().contains("File already exists at "));
     }
 }
