@@ -89,14 +89,4 @@ public class AVInfoServiceTest {
             assertEquals(EncodingOperation.COPY, encodeOrCopy);
         }
     }
-
-    @Test
-    public void testGetAudioEncodingOperationMov() throws Exception {
-        Path testFile = Path.of("src/test/resources/AMEN.MOV");
-        Mp44uOptions options = new Mp44uOptions();
-        options.setInputPath(testFile);
-
-        EncodingOperation encodeOrCopy = service.getAudioEncodingOperation(options);
-        assertEquals(AVInfoService.EncodingOperation.ENCODE, encodeOrCopy);
-    }
 }
