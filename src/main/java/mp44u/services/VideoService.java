@@ -22,6 +22,26 @@ public class VideoService {
 
     private static final String FFMPEG = "ffmpeg";
 
+    private AVInfoService avInfoService;
+
+    /**
+     * Encode or copy video file
+     * @param options
+     * @return path to mp4 file
+     */
+    public Path convertOrCopyVideo(Mp44uOptions options) throws Exception {
+        Path outputPath = null;
+
+        String encodeOrCopy = avInfoService.videoEncodeOrCopy(options);
+        if (encodeOrCopy.contains(AVInfoService.VIDEO_ENCODE)) {
+            outputPath = ffmpegConvertToMp4(options);
+        } else if (encodeOrCopy.contains(AVInfoService.VIDEO_COPY)) {
+            outputPath = ffmpegCopyToMp4(options);
+        }
+
+        return outputPath;
+    }
+
     /**
      * Run ffmpeg and convert video file to mp4
      * @param options
@@ -72,5 +92,33 @@ public class VideoService {
         CommandUtility.executeCommand(command);
 
         return outputFile;
+    }
+
+    /**
+     * Run ffmpeg and copy video file to mp4
+     * @param options
+     * @return path to mp4 file
+     */
+    public Path ffmpegCopyToMp4(Mp44uOptions options) throws Exception {
+        String inputFile = options.getInputPath().toString();
+        String input = "-i";
+        String vcodec = "-vcodec";
+        String vcodecValue = "copy";
+        Path outputPath = options.getOutputPath();
+        String outputFilename = FilenameUtils.getBaseName(inputFile) + ".mp4";
+        Path outputFile = FileService.buildOutputFile(outputPath, outputFilename, ".mp4");
+
+        FileService.validateFiles(inputFile, outputFile);
+
+        List<String> command = new ArrayList<>(Arrays.asList(FFMPEG, input, inputFile,
+                vcodec, vcodecValue,
+                outputFile.toString()));
+        CommandUtility.executeCommand(command);
+
+        return outputFile;
+    }
+
+    public void setAvInfoService(AVInfoService avInfoService) {
+        this.avInfoService = avInfoService;
     }
 }

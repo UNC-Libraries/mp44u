@@ -120,7 +120,7 @@ public class AVInfoServiceTest {
             mockedStatic.verify(() -> CommandUtility.executeCommand(
                     new ArrayList<>(Arrays.asList("ffprobe", "-v", "quiet",
                             "-show_entries", "stream=codec_name,height,codec_type,bit_rate", mockedInput.toString()))));
-            assertEquals("AUDIO_COPY", encodeOrCopy);
+            assertEquals(AVInfoService.AUDIO_COPY, encodeOrCopy);
         }
     }
 
@@ -144,7 +144,7 @@ public class AVInfoServiceTest {
             mockedStatic.verify(() -> CommandUtility.executeCommand(
                     new ArrayList<>(Arrays.asList("ffprobe", "-v", "quiet",
                             "-show_entries", "stream=codec_name,height,codec_type,bit_rate", mockedInput.toString()))));
-            assertEquals("VIDEO_COPY", encodeOrCopy);
+            assertEquals(AVInfoService.VIDEO_COPY, encodeOrCopy);
         }
     }
 
@@ -185,7 +185,7 @@ public class AVInfoServiceTest {
         options.setInputPath(testFile);
 
         String encodeOrCopy = service.audioEncodeOrCopy(options);
-        assertEquals("AUDIO_COPY", encodeOrCopy);
+        assertEquals(AVInfoService.AUDIO_COPY, encodeOrCopy);
     }
 
     @Test
@@ -195,7 +195,7 @@ public class AVInfoServiceTest {
         options.setInputPath(testFile);
 
         String encodeOrCopy = service.audioEncodeOrCopy(options);
-        assertEquals("AUDIO_ENCODE", encodeOrCopy);
+        assertEquals(AVInfoService.AUDIO_ENCODE, encodeOrCopy);
     }
 
     @Test
@@ -205,7 +205,7 @@ public class AVInfoServiceTest {
         options.setInputPath(testFile);
 
         String encodeOrCopy = service.videoEncodeOrCopy(options);
-        assertEquals("VIDEO_COPY", encodeOrCopy);
+        assertEquals(AVInfoService.VIDEO_COPY, encodeOrCopy);
     }
 
     @Test
@@ -215,6 +215,6 @@ public class AVInfoServiceTest {
         options.setInputPath(testFile);
 
         String encodeOrCopy = service.videoEncodeOrCopy(options);
-        assertEquals("VIDEO_ENCODE", encodeOrCopy);
+        assertEquals(AVInfoService.VIDEO_ENCODE, encodeOrCopy);
     }
 }

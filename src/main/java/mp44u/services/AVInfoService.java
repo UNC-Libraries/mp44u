@@ -19,6 +19,11 @@ import static org.slf4j.LoggerFactory.getLogger;
 public class AVInfoService {
     private static final Logger log = getLogger(AVInfoService.class);
 
+    public static final String AUDIO_ENCODE = "AUDIO_ENCODE";
+    public static final String AUDIO_COPY = "AUDIO_COPY";
+    public static final String VIDEO_ENCODE = "VIDEO_ENCODE";
+    public static final String VIDEO_COPY = "VIDEO_COPY";
+
     /**
      * Run ffprobe and retrieve AV information for the input file
      * @param options
@@ -57,7 +62,7 @@ public class AVInfoService {
      * @return
      */
     public String audioEncodeOrCopy(Mp44uOptions options) throws Exception {
-        String audioEncoding = "AUDIO_ENCODE";
+        String audioEncoding = AUDIO_ENCODE;
 
         Map<String,String> avInfo = retrieveAudioVideoInfo(options);
         String codecName = avInfo.get("codec_name");
@@ -69,7 +74,7 @@ public class AVInfoService {
         }
 
         if (codecName.contains("aac") && bitRate <= 192000) {
-            audioEncoding = "AUDIO_COPY";
+            audioEncoding = AUDIO_COPY;
         }
 
         return audioEncoding;
@@ -82,7 +87,7 @@ public class AVInfoService {
      * @return
      */
     public String videoEncodeOrCopy(Mp44uOptions options) throws Exception {
-        String videoEncoding = "VIDEO_ENCODE";
+        String videoEncoding = VIDEO_ENCODE;
 
         Map<String,String> avInfo = retrieveAudioVideoInfo(options);
         String codecName = avInfo.get("codec_name");
@@ -95,7 +100,7 @@ public class AVInfoService {
         }
 
         if (codecName.contains("h264") && height <= 720 && bitRate <= 3000000) {
-            videoEncoding = "VIDEO_COPY";
+            videoEncoding = VIDEO_COPY;
         }
 
         return videoEncoding;

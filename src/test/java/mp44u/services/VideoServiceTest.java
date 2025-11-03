@@ -22,13 +22,16 @@ import static org.mockito.MockitoAnnotations.openMocks;
 
 public class VideoServiceTest {
     private AutoCloseable closeable;
+    private AVInfoService avInfoService;
     private VideoService service;
     private Path testOutput = Paths.get("target/test_output");
 
     @BeforeEach
     public void setup() throws Exception {
         closeable = openMocks(this);
+        avInfoService = new AVInfoService();
         service = new VideoService();
+        service.setAvInfoService(avInfoService);
 
         if (Files.notExists(testOutput)) {
             Files.createDirectory(testOutput);
@@ -42,7 +45,7 @@ public class VideoServiceTest {
     }
 
     @Test
-    public void testVideo() throws Exception {
+    public void testVideoEncode() throws Exception {
         try (MockedStatic<CommandUtility> mockedStatic = Mockito.mockStatic(CommandUtility.class)) {
             Path mockedInput = testOutput.resolve("test_input.mp4");
             Path mockedOutput = testOutput.resolve("test_output.mp4");
@@ -52,6 +55,7 @@ public class VideoServiceTest {
             mockedStatic.when(() -> CommandUtility.executeCommand(anyList())).thenReturn(mockedOutput.toString());
 
             VideoService videoService = new VideoService();
+            videoService.setAvInfoService(avInfoService);
             videoService.ffmpegConvertToMp4(options);
 
             mockedStatic.verify(() -> CommandUtility.executeCommand(
@@ -60,6 +64,26 @@ public class VideoServiceTest {
                             "-force_key_frames", "expr:gte(t,n_forced*2)", "-crf", "22", "-maxrate", "2M",
                             "-bufsize", "4M", "-pix_fmt", "yuv420p", "-acodec", "libfdk_aac", "-ab", "128k",
                             "-dither_method", "triangular", "-movflags", "faststart", mockedOutput.toString()))));
+        }
+    }
+
+    @Test
+    public void testVideoCopy() throws Exception {
+        try (MockedStatic<CommandUtility> mockedStatic = Mockito.mockStatic(CommandUtility.class)) {
+            Path mockedInput = testOutput.resolve("test_input.mp4");
+            Path mockedOutput = testOutput.resolve("test_output.mp4");
+            Mp44uOptions options = new Mp44uOptions();
+            options.setInputPath(mockedInput);
+            options.setOutputPath(testOutput.resolve("test_output"));
+            mockedStatic.when(() -> CommandUtility.executeCommand(anyList())).thenReturn(mockedOutput.toString());
+
+            VideoService videoService = new VideoService();
+            videoService.setAvInfoService(avInfoService);
+            videoService.ffmpegCopyToMp4(options);
+
+            mockedStatic.verify(() -> CommandUtility.executeCommand(
+                    new ArrayList<>(Arrays.asList("ffmpeg", "-i", mockedInput.toString(), "-vcodec", "copy",
+                            mockedOutput.toString()))));
         }
     }
 
