@@ -17,6 +17,7 @@
         <slf4j.version>2.0.17</slf4j.version>
         <logback.version>1.5.18</logback.version>
         <jacoco.version>0.8.12</jacoco.version>
+        <jackson.version>2.18.2</jackson.version>
         <mockito.version>5.15.2</mockito.version>
         <mockito.junit.version>5.15.2</mockito.junit.version>
     </properties>
@@ -76,6 +77,21 @@
             <artifactId>mockito-junit-jupiter</artifactId>
             <version>${mockito.junit.version}</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+            <version>${jackson.version}</version>
         </dependency>
     </dependencies>
     <build>
