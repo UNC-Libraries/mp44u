@@ -20,6 +20,9 @@ public class AVInfoService {
     private static final Logger log = getLogger(AVInfoService.class);
 
     public enum EncodingOperation { ENCODE, COPY; }
+    private static final int AUDIO_ENCODING_MIN_BIT_RATE = 192000;
+    private static final int VIDEO_ENCODING_MIN_BIT_RATE = 3000000;
+    private static final int VIDEO_ENCODING_MIN_HEIGHT = 720;
 
     /**
      * Run ffprobe and retrieve AV information for the input file
@@ -73,12 +76,12 @@ public class AVInfoService {
         if (avInfo.get("codec_name") != null) {
             codecName = avInfo.get("codec_name");
         }
-        int bitRate = 192001;
+        int bitRate = AUDIO_ENCODING_MIN_BIT_RATE + 1;
         if (avInfo.get("bit_rate") != null) {
             bitRate = Integer.parseInt(avInfo.get("bit_rate"));
         }
 
-        if (codecName.contains("aac") && bitRate <= 192000) {
+        if (codecName.contains("aac") && bitRate <= AUDIO_ENCODING_MIN_BIT_RATE) {
             audioEncoding = EncodingOperation.COPY;
         }
 
@@ -99,16 +102,17 @@ public class AVInfoService {
         if (avInfo.get("codec_name") != null) {
             codecName = avInfo.get("codec_name");
         }
-        int height = 721;
+        int height = VIDEO_ENCODING_MIN_HEIGHT + 1;
         if (avInfo.get("height") != null) {
            height = Integer.parseInt(avInfo.get("height"));
         }
-        int bitRate = 3000001;
+        int bitRate = VIDEO_ENCODING_MIN_BIT_RATE + 1;
         if (avInfo.get("bit_rate") != null) {
             bitRate = Integer.parseInt(avInfo.get("bit_rate"));
         }
 
-        if (codecName.contains("h264") && height <= 720 && bitRate <= 3000000) {
+        if (codecName.contains("h264") && height <= VIDEO_ENCODING_MIN_HEIGHT
+                && bitRate <= VIDEO_ENCODING_MIN_BIT_RATE) {
             videoEncoding = EncodingOperation.COPY;
         }
 
