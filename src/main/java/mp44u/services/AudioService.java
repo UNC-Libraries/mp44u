@@ -1,5 +1,6 @@
 package mp44u.services;
 
+import mp44u.services.AVInfoService.EncodingOperation;
 import mp44u.options.Mp44uOptions;
 import mp44u.util.CommandUtility;
 import mp44u.util.FileService;
@@ -32,10 +33,10 @@ public class AudioService {
     public Path convertOrCopyAudio(Mp44uOptions options) throws Exception {
         Path outputPath = null;
 
-        String encodeOrCopy = avInfoService.audioEncodeOrCopy(options);
-        if (encodeOrCopy.contains(AVInfoService.AUDIO_ENCODE)) {
+        EncodingOperation encodeOrCopy = avInfoService.getAudioEncodingOperation(options);
+        if (encodeOrCopy.equals(EncodingOperation.ENCODE)) {
             outputPath = ffmpegConvertToM4a(options);
-        } else if (encodeOrCopy.contains(AVInfoService.AUDIO_COPY)) {
+        } else if (encodeOrCopy.equals(EncodingOperation.COPY)) {
             outputPath = ffmpegCopyToM4a(options);
         }
 

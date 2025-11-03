@@ -1,5 +1,6 @@
 package mp44u.services;
 
+import mp44u.services.AVInfoService.EncodingOperation;
 import mp44u.options.Mp44uOptions;
 import mp44u.util.CommandUtility;
 import org.apache.commons.io.FileUtils;
@@ -56,7 +57,7 @@ public class VideoServiceTest {
 
             VideoService videoService = new VideoService();
             videoService.setAvInfoService(avInfoService);
-            videoService.ffmpegConvertToMp4(options);
+            videoService.ffmpegConvertToMp4(options, EncodingOperation.ENCODE);
 
             mockedStatic.verify(() -> CommandUtility.executeCommand(
                     new ArrayList<>(Arrays.asList("ffmpeg", "-i", mockedInput.toString(), "-map_chapters", "-1",
@@ -79,10 +80,11 @@ public class VideoServiceTest {
 
             VideoService videoService = new VideoService();
             videoService.setAvInfoService(avInfoService);
-            videoService.ffmpegCopyToMp4(options);
+            videoService.ffmpegCopyToMp4(options, EncodingOperation.ENCODE);
 
             mockedStatic.verify(() -> CommandUtility.executeCommand(
                     new ArrayList<>(Arrays.asList("ffmpeg", "-i", mockedInput.toString(), "-vcodec", "copy",
+                            "-acodec", "libfdk_aac",
                             mockedOutput.toString()))));
         }
     }
@@ -95,7 +97,7 @@ public class VideoServiceTest {
         options.setOutputPath(Paths.get("src/test/resources/009"));
 
         var e = assertThrows(IllegalArgumentException.class, () -> {
-            service.ffmpegConvertToMp4(options);
+            service.ffmpegConvertToMp4(options, EncodingOperation.ENCODE);
         });
         assertTrue(e.getMessage().contains("Input and output paths cannot be the same"));
     }

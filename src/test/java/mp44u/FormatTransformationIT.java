@@ -1,5 +1,6 @@
 package mp44u;
 
+import mp44u.services.AVInfoService.EncodingOperation;
 import mp44u.options.Mp44uOptions;
 import mp44u.services.AVInfoService;
 import mp44u.services.AudioService;
@@ -133,7 +134,7 @@ public class FormatTransformationIT {
         options.setInputPath(testFile);
         options.setOutputPath(testOutput.resolve("009_access"));
 
-        Path outputFile = videoService.ffmpegCopyToMp4(options);
+        Path outputFile = videoService.ffmpegCopyToMp4(options, EncodingOperation.COPY);
 
         assertTrue(Files.exists(outputFile));
         assertEquals(testOutput.resolve("009_access.mp4"), outputFile);
@@ -159,7 +160,7 @@ public class FormatTransformationIT {
         options.setInputPath(testFile);
         options.setOutputPath(testOutput.resolve("AMEN"));
 
-        Path outputFile = videoService.ffmpegConvertToMp4(options);
+        Path outputFile = videoService.ffmpegConvertToMp4(options, EncodingOperation.ENCODE);
 
         assertTrue(Files.exists(outputFile));
         assertEquals(testOutput.resolve("AMEN.mp4"), outputFile);
@@ -172,7 +173,7 @@ public class FormatTransformationIT {
         options.setInputPath(testFile);
         options.setOutputPath(testOutput.resolve("00288"));
 
-        Path outputFile = videoService.ffmpegConvertToMp4(options);
+        Path outputFile = videoService.ffmpegConvertToMp4(options, EncodingOperation.ENCODE);
 
         assertTrue(Files.exists(outputFile));
         assertEquals(testOutput.resolve("00288.mp4"), outputFile);

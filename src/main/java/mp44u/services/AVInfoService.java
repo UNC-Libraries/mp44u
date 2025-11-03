@@ -19,26 +19,30 @@ import static org.slf4j.LoggerFactory.getLogger;
 public class AVInfoService {
     private static final Logger log = getLogger(AVInfoService.class);
 
-    public static final String AUDIO_ENCODE = "AUDIO_ENCODE";
-    public static final String AUDIO_COPY = "AUDIO_COPY";
-    public static final String VIDEO_ENCODE = "VIDEO_ENCODE";
-    public static final String VIDEO_COPY = "VIDEO_COPY";
+    public enum EncodingOperation { ENCODE, COPY; }
 
     /**
      * Run ffprobe and retrieve AV information for the input file
      * @param options
      * @return
       */
-    public Map<String,String> retrieveAudioVideoInfo(Mp44uOptions options) throws Exception {
+    private Map<String,String> retrieveAudioVideoInfo(Mp44uOptions options, String av) {
         // run ffprobe
         String inputFile = options.getInputPath().toString();
         String ffprobe = "ffprobe";
         String v = "-v";
         String quiet = "quiet";
+        String selectStreams = "-select_streams";
+        String selectedStreams = "";
+        if (av.contains("audio")) {
+            selectedStreams = "a:0";
+        } else if (av.contains("video")) {
+            selectedStreams = "v:0";
+        }
         String showEntries = "-show_entries";
-        String entries = "stream=codec_name,height,codec_type,bit_rate";
+        String entries = "stream=codec_name,height,bit_rate";
 
-        List<String> command = new ArrayList<>(Arrays.asList(ffprobe, v, quiet,
+        List<String> command = new ArrayList<>(Arrays.asList(ffprobe, v, quiet, selectStreams, selectedStreams,
                 showEntries, entries, inputFile));
         String ffprobeOutput = CommandUtility.executeCommand(command);
 
@@ -46,7 +50,7 @@ public class AVInfoService {
         Map<String,String> avInfo = new HashMap<>();
         List<String> streams = List.of(ffprobeOutput.split(System.lineSeparator()));
         List<String> streamInfo = streams.stream()
-                .filter(str -> str.matches("[a-zA-z]*=[a-zA-z]*[0-9]*")).limit(4).toList();
+                .filter(str -> str.matches("[a-zA-z]*=[a-zA-z]*[0-9]*")).toList();
 
         for (String stream : streamInfo) {
             avInfo.put(stream.split("=")[0], stream.split("=")[1]);
@@ -61,20 +65,21 @@ public class AVInfoService {
      * @param options
      * @return
      */
-    public String audioEncodeOrCopy(Mp44uOptions options) throws Exception {
-        String audioEncoding = AUDIO_ENCODE;
+    public EncodingOperation getAudioEncodingOperation(Mp44uOptions options) {
+        EncodingOperation audioEncoding = EncodingOperation.ENCODE;
 
-        Map<String,String> avInfo = retrieveAudioVideoInfo(options);
-        String codecName = avInfo.get("codec_name");
-        int bitRate;
+        Map<String,String> avInfo = retrieveAudioVideoInfo(options, "audio");
+        String codecName = "audio";
+        if (avInfo.get("codec_name") != null) {
+            codecName = avInfo.get("codec_name");
+        }
+        int bitRate = 192001;
         if (avInfo.get("bit_rate") != null) {
             bitRate = Integer.parseInt(avInfo.get("bit_rate"));
-        } else {
-            bitRate = 192000;
         }
 
         if (codecName.contains("aac") && bitRate <= 192000) {
-            audioEncoding = AUDIO_COPY;
+            audioEncoding = EncodingOperation.COPY;
         }
 
         return audioEncoding;
@@ -86,21 +91,25 @@ public class AVInfoService {
      * @param options
      * @return
      */
-    public String videoEncodeOrCopy(Mp44uOptions options) throws Exception {
-        String videoEncoding = VIDEO_ENCODE;
+    public EncodingOperation getVideoEncodingOperation(Mp44uOptions options) {
+        EncodingOperation videoEncoding = EncodingOperation.ENCODE;
 
-        Map<String,String> avInfo = retrieveAudioVideoInfo(options);
-        String codecName = avInfo.get("codec_name");
-        int height = Integer.parseInt(avInfo.get("height"));
-        int bitRate;
+        Map<String,String> avInfo = retrieveAudioVideoInfo(options, "video");
+        String codecName = "video";
+        if (avInfo.get("codec_name") != null) {
+            codecName = avInfo.get("codec_name");
+        }
+        int height = 721;
+        if (avInfo.get("height") != null) {
+           height = Integer.parseInt(avInfo.get("height"));
+        }
+        int bitRate = 3000001;
         if (avInfo.get("bit_rate") != null) {
             bitRate = Integer.parseInt(avInfo.get("bit_rate"));
-        } else {
-            bitRate = 3000000;
         }
 
         if (codecName.contains("h264") && height <= 720 && bitRate <= 3000000) {
-            videoEncoding = VIDEO_COPY;
+            videoEncoding = EncodingOperation.COPY;
         }
 
         return videoEncoding;
