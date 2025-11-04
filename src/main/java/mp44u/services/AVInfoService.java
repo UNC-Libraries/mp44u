@@ -53,7 +53,7 @@ public class AVInfoService {
         Map<String,String> avInfo = new HashMap<>();
         List<String> streams = List.of(ffprobeOutput.split(System.lineSeparator()));
         List<String> streamInfo = streams.stream()
-                .filter(str -> str.matches("[a-zA-z]*=[a-zA-z]*[0-9]*")).toList();
+                .filter(str -> str.matches("([a-zA-z_]{6,10}=N/A)|([a-zA-z_]{6,10}=[a-zA-z]*[0-9]*)")).toList();
 
         for (String stream : streamInfo) {
             avInfo.put(stream.split("=")[0], stream.split("=")[1]);
@@ -103,11 +103,11 @@ public class AVInfoService {
             codecName = avInfo.get("codec_name");
         }
         int height = VIDEO_ENCODING_MIN_HEIGHT + 1;
-        if (avInfo.get("height") != null) {
+        if (avInfo.get("height") != null && !avInfo.get("height").matches("N/A")) {
            height = Integer.parseInt(avInfo.get("height"));
         }
         int bitRate = VIDEO_ENCODING_MIN_BIT_RATE + 1;
-        if (avInfo.get("bit_rate") != null) {
+        if (avInfo.get("bit_rate") != null && !avInfo.get("bit_rate").matches("N/A")) {
             bitRate = Integer.parseInt(avInfo.get("bit_rate"));
         }
 
