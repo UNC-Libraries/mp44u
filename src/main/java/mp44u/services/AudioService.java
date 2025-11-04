@@ -1,5 +1,6 @@
 package mp44u.services;
 
+import mp44u.services.AVInfoService.EncodingOperation;
 import mp44u.options.Mp44uOptions;
 import mp44u.util.CommandUtility;
 import mp44u.util.FileService;
@@ -21,6 +22,26 @@ public class AudioService {
     private static final Logger log = getLogger(AudioService.class);
 
     private static final String FFMPEG = "ffmpeg";
+
+    private AVInfoService avInfoService;
+
+    /**
+     * Encode or copy audio file
+     * @param options
+     * @return path to m4a file
+     */
+    public Path convertOrCopyAudio(Mp44uOptions options) throws Exception {
+        Path outputPath = null;
+
+        EncodingOperation encodeOrCopy = avInfoService.getAudioEncodingOperation(options);
+        if (encodeOrCopy.equals(EncodingOperation.ENCODE)) {
+            outputPath = ffmpegConvertToM4a(options);
+        } else if (encodeOrCopy.equals(EncodingOperation.COPY)) {
+            outputPath = ffmpegCopyToM4a(options);
+        }
+
+        return outputPath;
+    }
 
     /**
      * Run ffmpeg and convert audio file to m4a
@@ -52,5 +73,32 @@ public class AudioService {
         CommandUtility.executeCommand(command);
 
         return outputFile;
+    }
+
+    /**
+     * Run ffmpeg and copy audio file to m4a
+     * @param options
+     * @return path to m4a file
+     */
+    public Path ffmpegCopyToM4a(Mp44uOptions options) throws Exception {
+        String inputFile = options.getInputPath().toString();
+        String input = "-i";
+        String acodec = "-acodec";
+        String aacEncoder = "copy";
+        Path outputPath = options.getOutputPath();
+        String outputFilename = FilenameUtils.getBaseName(inputFile) + ".m4a";
+        Path outputFile = FileService.buildOutputFile(outputPath, outputFilename, ".m4a");
+
+        FileService.validateFiles(inputFile, outputFile);
+
+        List<String> command = new ArrayList<>(Arrays.asList(FFMPEG, input, inputFile, acodec, aacEncoder,
+                outputFile.toString()));
+        CommandUtility.executeCommand(command);
+
+        return outputFile;
+    }
+
+    public void setAvInfoService(AVInfoService avInfoService) {
+        this.avInfoService = avInfoService;
     }
 }

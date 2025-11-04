@@ -23,13 +23,16 @@ import static org.mockito.MockitoAnnotations.openMocks;
 
 public class AudioServiceTest {
     private AutoCloseable closeable;
+    private AVInfoService avInfoService;
     private AudioService service;
     private Path testOutput = Paths.get("target/test_output");
 
     @BeforeEach
     public void setup() throws Exception {
         closeable = openMocks(this);
+        avInfoService = new AVInfoService();
         service = new AudioService();
+        service.setAvInfoService(avInfoService);
 
         if (Files.notExists(testOutput)) {
             Files.createDirectory(testOutput);
@@ -43,7 +46,7 @@ public class AudioServiceTest {
     }
 
     @Test
-    public void testAudio() throws Exception {
+    public void testAudioEncode() throws Exception {
         try (MockedStatic<CommandUtility> mockedStatic = Mockito.mockStatic(CommandUtility.class)) {
             Path mockedInput = testOutput.resolve("test_input.mp3");
             Path mockedOutput = testOutput.resolve("test_output.m4a");
@@ -53,11 +56,32 @@ public class AudioServiceTest {
             mockedStatic.when(() -> CommandUtility.executeCommand(anyList())).thenReturn(mockedOutput.toString());
 
             AudioService audioService = new AudioService();
+            audioService.setAvInfoService(avInfoService);
             audioService.ffmpegConvertToM4a(options);
 
             mockedStatic.verify(() -> CommandUtility.executeCommand(
                     new ArrayList<>(Arrays.asList("ffmpeg", "-i", mockedInput.toString(), "-acodec", "libfdk_aac",
                             "-b:a", "128k", "-ar", "44100", "-y", "-nostdin", "-dither_method", "triangular",
+                            mockedOutput.toString()))));
+        }
+    }
+
+    @Test
+    public void testAudioCopy() throws Exception {
+        try (MockedStatic<CommandUtility> mockedStatic = Mockito.mockStatic(CommandUtility.class)) {
+            Path mockedInput = testOutput.resolve("test_input.mp3");
+            Path mockedOutput = testOutput.resolve("test_output.m4a");
+            Mp44uOptions options = new Mp44uOptions();
+            options.setInputPath(mockedInput);
+            options.setOutputPath(testOutput.resolve("test_output"));
+            mockedStatic.when(() -> CommandUtility.executeCommand(anyList())).thenReturn(mockedOutput.toString());
+
+            AudioService audioService = new AudioService();
+            audioService.setAvInfoService(avInfoService);
+            audioService.ffmpegCopyToM4a(options);
+
+            mockedStatic.verify(() -> CommandUtility.executeCommand(
+                    new ArrayList<>(Arrays.asList("ffmpeg", "-i", mockedInput.toString(), "-acodec", "copy",
                             mockedOutput.toString()))));
         }
     }

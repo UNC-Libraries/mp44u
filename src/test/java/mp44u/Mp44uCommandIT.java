@@ -1,5 +1,6 @@
 package mp44u;
 
+import mp44u.services.AVInfoService;
 import mp44u.services.AudioService;
 import mp44u.services.VideoService;
 import org.apache.commons.io.FileUtils;
@@ -30,6 +31,7 @@ public class Mp44uCommandIT {
 
     private AudioService audioService;
     private VideoService videoService;
+    private AVInfoService avInfoService;
     private Path testOutput = Paths.get("target/test_output");
 
     @BeforeEach
@@ -37,8 +39,11 @@ public class Mp44uCommandIT {
         command = new CommandLine(new CLIMain());
         System.setOut(new PrintStream(outputStreamCaptor));
 
+        avInfoService = new AVInfoService();
         audioService = new AudioService();
+        audioService.setAvInfoService(avInfoService);
         videoService = new VideoService();
+        videoService.setAvInfoService(avInfoService);
 
         if (Files.notExists(testOutput)) {
             Files.createDirectory(testOutput);

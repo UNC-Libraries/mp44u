@@ -1,5 +1,6 @@
 package mp44u.services;
 
+import mp44u.services.AVInfoService.EncodingOperation;
 import mp44u.options.Mp44uOptions;
 import mp44u.util.CommandUtility;
 import mp44u.util.FileService;
@@ -22,12 +23,33 @@ public class VideoService {
 
     private static final String FFMPEG = "ffmpeg";
 
+    private AVInfoService avInfoService;
+
+    /**
+     * Encode or copy video file
+     * @param options
+     * @return path to mp4 file
+     */
+    public Path convertOrCopyVideo(Mp44uOptions options) throws Exception {
+        Path outputPath = null;
+
+        EncodingOperation videoEncodingOperation = avInfoService.getVideoEncodingOperation(options);
+        EncodingOperation audioEncodingOperation = avInfoService.getAudioEncodingOperation(options);
+        if (videoEncodingOperation.equals(EncodingOperation.ENCODE)) {
+            outputPath = ffmpegConvertToMp4(options, audioEncodingOperation);
+        } else if (videoEncodingOperation.equals(EncodingOperation.COPY)) {
+            outputPath = ffmpegCopyToMp4(options, audioEncodingOperation);
+        }
+
+        return outputPath;
+    }
+
     /**
      * Run ffmpeg and convert video file to mp4
      * @param options
      * @return path to mp4 file
      */
-    public Path ffmpegConvertToMp4(Mp44uOptions options) throws Exception {
+    public Path ffmpegConvertToMp4(Mp44uOptions options, EncodingOperation audioEncodingOperation) throws Exception {
         String inputFile = options.getInputPath().toString();
         String input = "-i";
         String mapChapters = "-map_chapters";
@@ -48,6 +70,9 @@ public class VideoService {
         String pixFmtValue = "yuv420p";
         String acodec = "-acodec";
         String acodecValue = "libfdk_aac";
+        if (audioEncodingOperation.equals(EncodingOperation.COPY)) {
+            acodecValue = "copy";
+        }
         String ab = "-ab";
         String abValue = "128k";
         String ditherMethod = "-dither_method";
@@ -72,5 +97,38 @@ public class VideoService {
         CommandUtility.executeCommand(command);
 
         return outputFile;
+    }
+
+    /**
+     * Run ffmpeg and copy video file to mp4
+     * @param options
+     * @return path to mp4 file
+     */
+    public Path ffmpegCopyToMp4(Mp44uOptions options, EncodingOperation audioEncodingOperation) throws Exception {
+        String inputFile = options.getInputPath().toString();
+        String input = "-i";
+        String vcodec = "-vcodec";
+        String vcodecValue = "copy";
+        String acodec = "-acodec";
+        String acodecValue = "libfdk_aac";
+        if (audioEncodingOperation.equals(EncodingOperation.COPY)) {
+            acodecValue = "copy";
+        }
+        Path outputPath = options.getOutputPath();
+        String outputFilename = FilenameUtils.getBaseName(inputFile) + ".mp4";
+        Path outputFile = FileService.buildOutputFile(outputPath, outputFilename, ".mp4");
+
+        FileService.validateFiles(inputFile, outputFile);
+
+        List<String> command = new ArrayList<>(Arrays.asList(FFMPEG, input, inputFile,
+                vcodec, vcodecValue, acodec, acodecValue,
+                outputFile.toString()));
+        CommandUtility.executeCommand(command);
+
+        return outputFile;
+    }
+
+    public void setAvInfoService(AVInfoService avInfoService) {
+        this.avInfoService = avInfoService;
     }
 }

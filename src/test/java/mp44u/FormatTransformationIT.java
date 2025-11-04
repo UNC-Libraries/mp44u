@@ -1,6 +1,8 @@
 package mp44u;
 
+import mp44u.services.AVInfoService.EncodingOperation;
 import mp44u.options.Mp44uOptions;
+import mp44u.services.AVInfoService;
 import mp44u.services.AudioService;
 import mp44u.services.VideoService;
 import org.apache.commons.io.FileUtils;
@@ -26,12 +28,16 @@ public class FormatTransformationIT {
 
     private AudioService audioService;
     private VideoService videoService;
+    private AVInfoService avInfoService;
     private Path testOutput = Paths.get("target/test_output");
 
     @BeforeEach
     public void setup() throws Exception {
+        avInfoService = new AVInfoService();
         audioService = new AudioService();
+        audioService.setAvInfoService(avInfoService);
         videoService = new VideoService();
+        videoService.setAvInfoService(avInfoService);
 
         if (Files.notExists(testOutput)) {
             Files.createDirectory(testOutput);
@@ -44,7 +50,7 @@ public class FormatTransformationIT {
     }
 
     @Test
-    public void testAudioMp3() throws Exception {
+    public void testAudioEncodeMp3() throws Exception {
         Path testFile = Path.of("src/test/resources/04007_G0010_2_2.mp3");
         Mp44uOptions options = new Mp44uOptions();
         options.setInputPath(testFile);
@@ -57,7 +63,20 @@ public class FormatTransformationIT {
     }
 
     @Test
-    public void testAudioAif() throws Exception {
+    public void testAudioCopyAac() throws Exception {
+        Path testFile = Path.of("src/test/resources/04007_G0010_2_2.m4a");
+        Mp44uOptions options = new Mp44uOptions();
+        options.setInputPath(testFile);
+        options.setOutputPath(testOutput.resolve("04007_G0010_2_2_copy"));
+
+        Path outputFile = audioService.ffmpegCopyToM4a(options);
+
+        assertTrue(Files.exists(outputFile));
+        assertEquals(testOutput.resolve("04007_G0010_2_2_copy.m4a"), outputFile);
+    }
+
+    @Test
+    public void testAudioEncodeAif() throws Exception {
         Path testFile = Path.of("src/test/resources/3AudioTrack.aiff");
         Mp44uOptions options = new Mp44uOptions();
         options.setInputPath(testFile);
@@ -70,7 +89,7 @@ public class FormatTransformationIT {
     }
 
     @Test
-    public void testAudioAu() throws Exception {
+    public void testAudioEncodeAu() throws Exception {
         Path testFile = Path.of("src/test/resources/b00310.au");
         Mp44uOptions options = new Mp44uOptions();
         options.setInputPath(testFile);
@@ -83,7 +102,7 @@ public class FormatTransformationIT {
     }
 
     @Test
-    public void testAudioWav() throws Exception {
+    public void testAudioEncodeWav() throws Exception {
         Path testFile = Path.of("src/test/resources/14.wav");
         Mp44uOptions options = new Mp44uOptions();
         options.setInputPath(testFile);
@@ -96,7 +115,7 @@ public class FormatTransformationIT {
     }
 
     @Test
-    public void testAudioWma() throws Exception {
+    public void testAudioEncodeWma() throws Exception {
         Path testFile = Path.of("src/test/resources/DS400038.WMA");
         Mp44uOptions options = new Mp44uOptions();
         options.setInputPath(testFile);
@@ -109,39 +128,52 @@ public class FormatTransformationIT {
     }
 
     @Test
-    public void testVideoMp4() throws Exception {
+    public void testVideoCopyMp4() throws Exception {
         Path testFile = Path.of("src/test/resources/009.mp4");
         Mp44uOptions options = new Mp44uOptions();
         options.setInputPath(testFile);
         options.setOutputPath(testOutput.resolve("009_access"));
 
-        Path outputFile = videoService.ffmpegConvertToMp4(options);
+        Path outputFile = videoService.ffmpegCopyToMp4(options, EncodingOperation.COPY);
 
         assertTrue(Files.exists(outputFile));
         assertEquals(testOutput.resolve("009_access.mp4"), outputFile);
     }
 
     @Test
-    public void testVideoMov() throws Exception {
+    public void testVideoEncodeOrCopyMp4() throws Exception {
+        Path testFile = Path.of("src/test/resources/009.mp4");
+        Mp44uOptions options = new Mp44uOptions();
+        options.setInputPath(testFile);
+        options.setOutputPath(testOutput.resolve("009_access"));
+
+        Path outputFile = videoService.convertOrCopyVideo(options);
+
+        assertTrue(Files.exists(outputFile));
+        assertEquals(testOutput.resolve("009_access.mp4"), outputFile);
+    }
+
+    @Test
+    public void testVideoEncodeMov() throws Exception {
         Path testFile = Path.of("src/test/resources/AMEN.MOV");
         Mp44uOptions options = new Mp44uOptions();
         options.setInputPath(testFile);
         options.setOutputPath(testOutput.resolve("AMEN"));
 
-        Path outputFile = videoService.ffmpegConvertToMp4(options);
+        Path outputFile = videoService.ffmpegConvertToMp4(options, EncodingOperation.ENCODE);
 
         assertTrue(Files.exists(outputFile));
         assertEquals(testOutput.resolve("AMEN.mp4"), outputFile);
     }
 
     @Test
-    public void testVideoMts() throws Exception {
+    public void testVideoEncodeMts() throws Exception {
         Path testFile = Path.of("src/test/resources/00288.MTS");
         Mp44uOptions options = new Mp44uOptions();
         options.setInputPath(testFile);
         options.setOutputPath(testOutput.resolve("00288"));
 
-        Path outputFile = videoService.ffmpegConvertToMp4(options);
+        Path outputFile = videoService.ffmpegConvertToMp4(options, EncodingOperation.ENCODE);
 
         assertTrue(Files.exists(outputFile));
         assertEquals(testOutput.resolve("00288.mp4"), outputFile);
