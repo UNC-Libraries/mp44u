@@ -53,7 +53,7 @@ public class AVInfoService {
         Map<String,String> avInfo = new HashMap<>();
         List<String> streams = List.of(ffprobeOutput.split(System.lineSeparator()));
         List<String> streamInfo = streams.stream()
-                .filter(str -> str.matches("([a-zA-z_]{6,10}=N/A)|([a-zA-z_]{6,10}=[a-zA-z]*[0-9]*)")).toList();
+                .filter(str -> str.matches(".+=.*")).toList();
 
         for (String stream : streamInfo) {
             avInfo.put(stream.split("=")[0], stream.split("=")[1]);
@@ -76,9 +76,12 @@ public class AVInfoService {
         if (avInfo.get("codec_name") != null) {
             codecName = avInfo.get("codec_name");
         }
+
         int bitRate = AUDIO_ENCODING_MIN_BIT_RATE + 1;
-        if (avInfo.get("bit_rate") != null) {
+        try {
             bitRate = Integer.parseInt(avInfo.get("bit_rate"));
+        } catch (NumberFormatException e) {
+            log.warn("bit_rate not found: {}", e.getMessage());
         }
 
         if (codecName.contains("aac") && bitRate <= AUDIO_ENCODING_MIN_BIT_RATE) {
@@ -102,13 +105,19 @@ public class AVInfoService {
         if (avInfo.get("codec_name") != null) {
             codecName = avInfo.get("codec_name");
         }
+
         int height = VIDEO_ENCODING_MIN_HEIGHT + 1;
-        if (avInfo.get("height") != null && !avInfo.get("height").matches("N/A")) {
-           height = Integer.parseInt(avInfo.get("height"));
+        try {
+            height = Integer.parseInt(avInfo.get("height"));
+        } catch (NumberFormatException e) {
+            log.warn("height not found: {}", e.getMessage());
         }
+
         int bitRate = VIDEO_ENCODING_MIN_BIT_RATE + 1;
-        if (avInfo.get("bit_rate") != null && !avInfo.get("bit_rate").matches("N/A")) {
+        try {
             bitRate = Integer.parseInt(avInfo.get("bit_rate"));
+        } catch (NumberFormatException e) {
+            log.warn("bit_rate not found: {}", e.getMessage());
         }
 
         if (codecName.contains("h264") && height <= VIDEO_ENCODING_MIN_HEIGHT
