@@ -22,6 +22,9 @@ public class AudioService {
     private static final Logger log = getLogger(AudioService.class);
 
     private static final String FFMPEG = "ffmpeg";
+    public static final List<String> AUDIO = Arrays.asList("-y", "-nostdin", "-dither_method", "triangular");
+    public static final List<String> ENCODE = Arrays.asList("-acodec", "aac", "-ab", "128k", "-ar", "44100");
+    public static final List<String> COPY = Arrays.asList("-c:a", "copy");
 
     private AVInfoService avInfoService;
 
@@ -51,25 +54,16 @@ public class AudioService {
     public Path ffmpegConvertToM4a(Mp44uOptions options) throws Exception {
         String inputFile = options.getInputPath().toString();
         String input = "-i";
-        String acodec = "-acodec";
-        String aacEncoder = "libfdk_aac";
-        String ba = "-b:a";
-        String bitrate = "128k";
-        String audioSampling = "-ar";
-        String audioSamplingRate = "44100";
-        String y = "-y";
-        String nostdin = "-nostdin";
-        String dither = "-dither_method";
-        String triangular = "triangular";
         Path outputPath = options.getOutputPath();
         String outputFilename = FilenameUtils.getBaseName(inputFile) + ".m4a";
         Path outputFile = FileService.buildOutputFile(outputPath, outputFilename, ".m4a");
 
         FileService.validateFiles(inputFile, outputFile);
 
-        List<String> command = new ArrayList<>(Arrays.asList(FFMPEG, input, inputFile, acodec, aacEncoder,
-                ba, bitrate, audioSampling, audioSamplingRate, y, nostdin, dither, triangular,
-                outputFile.toString()));
+        List<String> command = new ArrayList<>(Arrays.asList(FFMPEG, input, inputFile, outputFile.toString()));
+        command.addAll(ENCODE);
+        command.addAll(AUDIO);
+
         CommandUtility.executeCommand(command);
 
         return outputFile;
@@ -83,16 +77,16 @@ public class AudioService {
     public Path ffmpegCopyToM4a(Mp44uOptions options) throws Exception {
         String inputFile = options.getInputPath().toString();
         String input = "-i";
-        String acodec = "-acodec";
-        String aacEncoder = "copy";
         Path outputPath = options.getOutputPath();
         String outputFilename = FilenameUtils.getBaseName(inputFile) + ".m4a";
         Path outputFile = FileService.buildOutputFile(outputPath, outputFilename, ".m4a");
 
         FileService.validateFiles(inputFile, outputFile);
 
-        List<String> command = new ArrayList<>(Arrays.asList(FFMPEG, input, inputFile, acodec, aacEncoder,
-                outputFile.toString()));
+        List<String> command = new ArrayList<>(Arrays.asList(FFMPEG, input, inputFile, outputFile.toString()));
+        command.addAll(COPY);
+        command.addAll(AUDIO);
+
         CommandUtility.executeCommand(command);
 
         return outputFile;

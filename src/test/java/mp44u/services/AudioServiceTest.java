@@ -60,9 +60,9 @@ public class AudioServiceTest {
             audioService.ffmpegConvertToM4a(options);
 
             mockedStatic.verify(() -> CommandUtility.executeCommand(
-                    new ArrayList<>(Arrays.asList("ffmpeg", "-i", mockedInput.toString(), "-acodec", "libfdk_aac",
-                            "-b:a", "128k", "-ar", "44100", "-y", "-nostdin", "-dither_method", "triangular",
-                            mockedOutput.toString()))));
+                    new ArrayList<>(Arrays.asList("ffmpeg", "-i", mockedInput.toString(), mockedOutput.toString(),
+                            "-acodec", "aac", "-ab", "128k", "-ar", "44100",
+                            "-y", "-nostdin", "-dither_method", "triangular"))));
         }
     }
 
@@ -81,8 +81,8 @@ public class AudioServiceTest {
             audioService.ffmpegCopyToM4a(options);
 
             mockedStatic.verify(() -> CommandUtility.executeCommand(
-                    new ArrayList<>(Arrays.asList("ffmpeg", "-i", mockedInput.toString(), "-acodec", "copy",
-                            mockedOutput.toString()))));
+                    new ArrayList<>(Arrays.asList("ffmpeg", "-i", mockedInput.toString(), mockedOutput.toString(),
+                            "-c:a", "copy", "-y", "-nostdin", "-dither_method", "triangular"))));
         }
     }
 

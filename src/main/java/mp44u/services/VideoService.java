@@ -22,6 +22,12 @@ public class VideoService {
     private static final Logger log = getLogger(VideoService.class);
 
     private static final String FFMPEG = "ffmpeg";
+    public static final List<String> VIDEO = Arrays.asList("-map_chapters", "-1", "-movflags", "faststart");
+    public static final List<String> SUBTITLES = Arrays.asList("-c:s", "mov_text");
+    public static final List<String> ENCODE = Arrays.asList("-vcodec", "libx264", "-crf", "22",
+            "-vf", "yadif=0:-1:1,scale=trunc(oh*dar/2)*2:min(ih\\,720)",
+            "-force_key_frames", "expr:gte(t,n_forced*2)", "-maxrate", "2M", "-bufsize", "4M", "-pix_fmt", "yuv420p");
+    public static final List<String> COPY = Arrays.asList("-c:v", "copy");
 
     private AVInfoService avInfoService;
 
@@ -52,48 +58,24 @@ public class VideoService {
     public Path ffmpegConvertToMp4(Mp44uOptions options, EncodingOperation audioEncodingOperation) throws Exception {
         String inputFile = options.getInputPath().toString();
         String input = "-i";
-        String mapChapters = "-map_chapters";
-        String mapChaptersValue = "-1";
-        String vf = "-vf";
-        String vfValue = "yadif=0:-1:1,scale=trunc(oh*dar/2)*2:min(ih\\,720)";
-        String vcodec = "-vcodec";
-        String vcodecValue = "libx264";
-        String forceKeyFrames = "-force_key_frames";
-        String expr = "expr:gte(t,n_forced*2)";
-        String crf = "-crf";
-        String crfValue = "22";
-        String maxrate = "-maxrate";
-        String maxrateValue = "2M";
-        String bufSize = "-bufsize";
-        String bufSizeValue = "4M";
-        String pixFmt = "-pix_fmt";
-        String pixFmtValue = "yuv420p";
-        String acodec = "-acodec";
-        String acodecValue = "libfdk_aac";
-        if (audioEncodingOperation.equals(EncodingOperation.COPY)) {
-            acodecValue = "copy";
-        }
-        String ab = "-ab";
-        String abValue = "128k";
-        String ditherMethod = "-dither_method";
-        String ditherMethodValue = "triangular";
-        String movflags = "-movflags";
-        String faststart = "faststart";
         Path outputPath = options.getOutputPath();
         String outputFilename = FilenameUtils.getBaseName(inputFile) + ".mp4";
         Path outputFile = FileService.buildOutputFile(outputPath, outputFilename, ".mp4");
 
         FileService.validateFiles(inputFile, outputFile);
 
-        List<String> command = new ArrayList<>(Arrays.asList(FFMPEG, input, inputFile,
-                mapChapters, mapChaptersValue,
-                vf, vfValue,
-                vcodec, vcodecValue,
-                forceKeyFrames, expr,
-                crf, crfValue, maxrate, maxrateValue,
-                bufSize, bufSizeValue, pixFmt, pixFmtValue, acodec, acodecValue, ab, abValue,
-                ditherMethod, ditherMethodValue, movflags, faststart,
-                outputFile.toString()));
+        List<String> command = new ArrayList<>(Arrays.asList(FFMPEG, input, inputFile, outputFile.toString()));
+        command.addAll(VIDEO);
+        command.addAll(SUBTITLES);
+        command.addAll(ENCODE);
+
+        if (audioEncodingOperation.equals(EncodingOperation.COPY)) {
+            command.addAll(AudioService.COPY);
+        } else {
+            command.addAll(AudioService.ENCODE);
+        }
+        command.addAll(AudioService.AUDIO);
+
         CommandUtility.executeCommand(command);
 
         return outputFile;
@@ -107,22 +89,24 @@ public class VideoService {
     public Path ffmpegCopyToMp4(Mp44uOptions options, EncodingOperation audioEncodingOperation) throws Exception {
         String inputFile = options.getInputPath().toString();
         String input = "-i";
-        String vcodec = "-vcodec";
-        String vcodecValue = "copy";
-        String acodec = "-acodec";
-        String acodecValue = "libfdk_aac";
-        if (audioEncodingOperation.equals(EncodingOperation.COPY)) {
-            acodecValue = "copy";
-        }
         Path outputPath = options.getOutputPath();
         String outputFilename = FilenameUtils.getBaseName(inputFile) + ".mp4";
         Path outputFile = FileService.buildOutputFile(outputPath, outputFilename, ".mp4");
 
         FileService.validateFiles(inputFile, outputFile);
 
-        List<String> command = new ArrayList<>(Arrays.asList(FFMPEG, input, inputFile,
-                vcodec, vcodecValue, acodec, acodecValue,
-                outputFile.toString()));
+        List<String> command = new ArrayList<>(Arrays.asList(FFMPEG, input, inputFile, outputFile.toString()));
+        command.addAll(VIDEO);
+        command.addAll(SUBTITLES);
+        command.addAll(COPY);
+        
+        if (audioEncodingOperation.equals(EncodingOperation.COPY)) {
+            command.addAll(AudioService.COPY);
+        } else {
+            command.addAll(AudioService.ENCODE);
+        }
+        command.addAll(AudioService.AUDIO);
+
         CommandUtility.executeCommand(command);
 
         return outputFile;

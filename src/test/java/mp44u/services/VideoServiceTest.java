@@ -60,11 +60,13 @@ public class VideoServiceTest {
             videoService.ffmpegConvertToMp4(options, EncodingOperation.ENCODE);
 
             mockedStatic.verify(() -> CommandUtility.executeCommand(
-                    new ArrayList<>(Arrays.asList("ffmpeg", "-i", mockedInput.toString(), "-map_chapters", "-1",
-                            "-vf", "yadif=0:-1:1,scale=trunc(oh*dar/2)*2:min(ih\\,720)", "-vcodec", "libx264",
-                            "-force_key_frames", "expr:gte(t,n_forced*2)", "-crf", "22", "-maxrate", "2M",
-                            "-bufsize", "4M", "-pix_fmt", "yuv420p", "-acodec", "libfdk_aac", "-ab", "128k",
-                            "-dither_method", "triangular", "-movflags", "faststart", mockedOutput.toString()))));
+                    new ArrayList<>(Arrays.asList("ffmpeg", "-i", mockedInput.toString(), mockedOutput.toString(),
+                            "-map_chapters", "-1", "-movflags", "faststart", "-c:s", "mov_text",
+                            "-vcodec", "libx264", "-crf", "22",
+                            "-vf", "yadif=0:-1:1,scale=trunc(oh*dar/2)*2:min(ih\\,720)",
+                            "-force_key_frames", "expr:gte(t,n_forced*2)", "-maxrate", "2M", "-bufsize", "4M",
+                            "-pix_fmt", "yuv420p", "-acodec", "aac", "-ab", "128k", "-ar", "44100", "-y", "-nostdin",
+                            "-dither_method", "triangular"))));
         }
     }
 
@@ -83,9 +85,10 @@ public class VideoServiceTest {
             videoService.ffmpegCopyToMp4(options, EncodingOperation.ENCODE);
 
             mockedStatic.verify(() -> CommandUtility.executeCommand(
-                    new ArrayList<>(Arrays.asList("ffmpeg", "-i", mockedInput.toString(), "-vcodec", "copy",
-                            "-acodec", "libfdk_aac",
-                            mockedOutput.toString()))));
+                    new ArrayList<>(Arrays.asList("ffmpeg", "-i", mockedInput.toString(), mockedOutput.toString(),
+                            "-map_chapters", "-1", "-movflags", "faststart", "-c:s", "mov_text", "-c:v", "copy",
+                            "-acodec", "aac", "-ab", "128k", "-ar", "44100", "-y", "-nostdin",
+                            "-dither_method", "triangular"))));
         }
     }
 
