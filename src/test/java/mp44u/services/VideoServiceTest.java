@@ -57,7 +57,7 @@ public class VideoServiceTest {
 
             VideoService videoService = new VideoService();
             videoService.setAvInfoService(avInfoService);
-            videoService.ffmpegConvertToMp4(options, EncodingOperation.ENCODE);
+            videoService.ffmpegEncodeToMp4(options, EncodingOperation.ENCODE, EncodingOperation.ENCODE);
 
             mockedStatic.verify(() -> CommandUtility.executeCommand(
                     new ArrayList<>(Arrays.asList("ffmpeg", "-i", mockedInput.toString(), mockedOutput.toString(),
@@ -82,7 +82,7 @@ public class VideoServiceTest {
 
             VideoService videoService = new VideoService();
             videoService.setAvInfoService(avInfoService);
-            videoService.ffmpegCopyToMp4(options, EncodingOperation.ENCODE);
+            videoService.ffmpegEncodeToMp4(options, EncodingOperation.COPY, EncodingOperation.ENCODE);
 
             mockedStatic.verify(() -> CommandUtility.executeCommand(
                     new ArrayList<>(Arrays.asList("ffmpeg", "-i", mockedInput.toString(), mockedOutput.toString(),
@@ -100,7 +100,7 @@ public class VideoServiceTest {
         options.setOutputPath(Paths.get("src/test/resources/009"));
 
         var e = assertThrows(IllegalArgumentException.class, () -> {
-            service.ffmpegConvertToMp4(options, EncodingOperation.ENCODE);
+            service.ffmpegEncodeToMp4(options, EncodingOperation.COPY, EncodingOperation.ENCODE);
         });
         assertTrue(e.getMessage().contains("Input and output paths cannot be the same"));
     }
