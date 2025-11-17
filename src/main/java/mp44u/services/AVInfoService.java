@@ -20,6 +20,7 @@ public class AVInfoService {
     private static final Logger log = getLogger(AVInfoService.class);
 
     public enum EncodingOperation { ENCODE, COPY; }
+    public enum Subtitles { SUBTITLES, NO_SUBTITLES; }
     private static final int AUDIO_ENCODING_MIN_BIT_RATE = 192000;
     private static final int VIDEO_ENCODING_MIN_BIT_RATE = 3000000;
     private static final int VIDEO_ENCODING_MIN_HEIGHT = 720;
@@ -43,7 +44,7 @@ public class AVInfoService {
             selectedStreams = "v:0";
         }
         String showEntries = "-show_entries";
-        String entries = "stream=codec_name,height,bit_rate";
+        String entries = "stream=codec_name,height,bit_rate,index:stream_tags=language";
 
         List<String> command = new ArrayList<>(Arrays.asList(ffprobe, v, quiet, selectStreams, selectedStreams,
                 showEntries, entries, inputFile));
@@ -126,5 +127,20 @@ public class AVInfoService {
         }
 
         return videoEncoding;
+    }
+
+    /**
+     * Check for subtiltes in video file
+     * @param options
+     * @return
+     */
+    public Subtitles getSubtitles(Mp44uOptions options) {
+        Subtitles subtitles = Subtitles.NO_SUBTITLES;
+
+        Map<String,String> avInfo = retrieveAudioVideoInfo(options, "video");
+        if (avInfo.get("TAG:language") != null) {
+            subtitles = Subtitles.SUBTITLES;
+        }
+        return subtitles;
     }
 }

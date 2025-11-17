@@ -1,6 +1,7 @@
 package mp44u.services;
 
 import mp44u.services.AVInfoService.EncodingOperation;
+import mp44u.services.AVInfoService.Subtitles;
 import mp44u.options.Mp44uOptions;
 import mp44u.util.CommandUtility;
 import mp44u.util.FileService;
@@ -28,7 +29,6 @@ public class VideoService {
             "-vf", "yadif=0:-1:1,scale=trunc(oh*dar/2)*2:min(ih\\,720)",
             "-force_key_frames", "expr:gte(t,n_forced*2)", "-maxrate", "2M", "-bufsize", "4M", "-pix_fmt", "yuv420p");
     public static final List<String> COPY = Arrays.asList("-c:v", "copy");
-    public enum EncodingOption { VIDEO, SUBTITLES }
 
     private AVInfoService avInfoService;
 
@@ -40,8 +40,9 @@ public class VideoService {
     public Path convertOrCopyVideo(Mp44uOptions options) throws Exception {
         EncodingOperation videoEncodingOperation = avInfoService.getVideoEncodingOperation(options);
         EncodingOperation audioEncodingOperation = avInfoService.getAudioEncodingOperation(options);
+        Subtitles subtitles = avInfoService.getSubtitles(options);
 
-        return ffmpegEncodeToMp4(options, videoEncodingOperation, audioEncodingOperation);
+        return ffmpegEncodeToMp4(options, videoEncodingOperation, audioEncodingOperation, subtitles);
     }
 
     /**
@@ -50,7 +51,7 @@ public class VideoService {
      * @return path to mp4 file
      */
     public Path ffmpegEncodeToMp4(Mp44uOptions options, EncodingOperation videoEncodingOperation,
-                                  EncodingOperation audioEncodingOperation) throws Exception {
+                                  EncodingOperation audioEncodingOperation, Subtitles subtitles) throws Exception {
         String inputFile = options.getInputPath().toString();
         String input = "-i";
         Path outputPath = options.getOutputPath();
@@ -61,7 +62,11 @@ public class VideoService {
 
         List<String> command = new ArrayList<>(Arrays.asList(FFMPEG, input, inputFile, outputFile.toString()));
         command.addAll(VIDEO);
-        command.addAll(SUBTITLES);
+
+        // get subtitles
+        if (subtitles.equals(Subtitles.SUBTITLES)) {
+            command.addAll(SUBTITLES);
+        }
 
         // encode or copy video
         if (videoEncodingOperation.equals(EncodingOperation.ENCODE)) {
@@ -73,7 +78,6 @@ public class VideoService {
         // encode or copy audio
         if (audioEncodingOperation.equals(EncodingOperation.ENCODE)) {
             command.addAll(AudioService.ENCODE);
-            command.addAll(AudioService.AUDIO);
         } else {
             command.addAll(AudioService.COPY);
         }

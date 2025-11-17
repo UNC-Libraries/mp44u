@@ -1,6 +1,7 @@
 package mp44u;
 
 import mp44u.services.AVInfoService.EncodingOperation;
+import mp44u.services.AVInfoService.Subtitles;
 import mp44u.options.Mp44uOptions;
 import mp44u.services.AVInfoService;
 import org.junit.jupiter.api.BeforeEach;
@@ -58,8 +59,8 @@ public class EncodingOperationIT {
         Mp44uOptions options = new Mp44uOptions();
         options.setInputPath(testFile);
 
-        AVInfoService.EncodingOperation encodeOrCopy = service.getVideoEncodingOperation(options);
-        assertEquals(AVInfoService.EncodingOperation.COPY, encodeOrCopy);
+        EncodingOperation encodeOrCopy = service.getVideoEncodingOperation(options);
+        assertEquals(EncodingOperation.COPY, encodeOrCopy);
     }
 
     @Test
@@ -68,7 +69,27 @@ public class EncodingOperationIT {
         Mp44uOptions options = new Mp44uOptions();
         options.setInputPath(testFile);
 
-        AVInfoService.EncodingOperation encodeOrCopy = service.getVideoEncodingOperation(options);
-        assertEquals(AVInfoService.EncodingOperation.ENCODE, encodeOrCopy);
+        EncodingOperation encodeOrCopy = service.getVideoEncodingOperation(options);
+        assertEquals(EncodingOperation.ENCODE, encodeOrCopy);
+    }
+
+    @Test
+    public void testGetSubtitlesMp3() throws Exception {
+        Path testFile = Path.of("src/test/resources/04007_G0010_2_2.mp3");
+        Mp44uOptions options = new Mp44uOptions();
+        options.setInputPath(testFile);
+
+        Subtitles subtitles = service.getSubtitles(options);
+        assertEquals(Subtitles.NO_SUBTITLES, subtitles);
+    }
+
+    @Test
+    public void testGetSubtitlesMp4() throws Exception {
+        Path testFile = Path.of("src/test/resources/009.mp4");
+        Mp44uOptions options = new Mp44uOptions();
+        options.setInputPath(testFile);
+
+        Subtitles subtitles = service.getSubtitles(options);
+        assertEquals(Subtitles.SUBTITLES, subtitles);
     }
 }

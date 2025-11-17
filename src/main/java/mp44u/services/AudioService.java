@@ -22,8 +22,8 @@ public class AudioService {
     private static final Logger log = getLogger(AudioService.class);
 
     private static final String FFMPEG = "ffmpeg";
-    public static final List<String> AUDIO = Arrays.asList("-y", "-nostdin", "-dither_method", "triangular");
-    public static final List<String> ENCODE = Arrays.asList("-acodec", "aac", "-ab", "128k", "-ar", "44100");
+    public static final List<String> ENCODE = Arrays.asList("-acodec", "aac", "-ab", "128k", "-ar", "44100",
+            "-y", "-nostdin", "-dither_method", "triangular");
     public static final List<String> COPY = Arrays.asList("-c:a", "copy");
 
     private AVInfoService avInfoService;
@@ -60,7 +60,6 @@ public class AudioService {
         } else {
             command.addAll(COPY);
         }
-        command.addAll(AUDIO);
 
         CommandUtility.executeCommand(command);
 
