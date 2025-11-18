@@ -58,6 +58,17 @@ public class EncodingOperationIT {
     }
 
     @Test
+    public void testGetVideoEncodingOperationNoAudio() throws Exception {
+        Path testFile = Path.of("src/test/resources/amen_noaudio.mov");
+        Mp44uOptions options = new Mp44uOptions();
+        options.setInputPath(testFile);
+
+        Map<String,String> avInfo = service.retrieveAudioVideoInfo(options);
+        EncodingOperation encodeOrCopy = service.getVideoEncodingOperation(avInfo);
+        assertEquals(AVInfoService.EncodingOperation.ENCODE, encodeOrCopy);
+    }
+
+    @Test
     public void testGetVideoEncodingOperationMp4() throws Exception {
         Path testFile = Path.of("src/test/resources/009.mp4");
         Mp44uOptions options = new Mp44uOptions();

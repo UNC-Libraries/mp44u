@@ -38,31 +38,27 @@ public class AVInfoService {
         String v = "-v";
         String quiet = "quiet";
         String showEntries = "-show_entries";
-        String entries = "stream=codec_name,height,bit_rate,index:stream_tags=language";
+        String entries = "stream=codec_type,codec_name,height,bit_rate,index:stream_tags=language";
 
         List<String> command = new ArrayList<>(Arrays.asList(ffprobe, v, quiet,
                 showEntries, entries, inputFile));
         String ffprobeOutput = CommandUtility.executeCommand(command);
 
-        // split ffprobe output around \n and filter for values containing =
+        // split ffprobe output by [/STREAM] and use the codec_type to determine if stream contains audio/video info
         Map<String,String> avInfo = new HashMap<>();
-        ArrayList<String> streams = new ArrayList<>(Arrays.asList(ffprobeOutput.split(System.lineSeparator())));
-        ArrayList<String> streamInfo = (ArrayList<String>) streams.stream()
-                .filter(str -> str.matches(".+=.*")).collect(Collectors.toList());
-
-        // ffprobe output for video files contain 2 indexes: 0 for video, 1 for audio
-        if (streamInfo.contains("index=0") && streamInfo.contains("index=1")) {
-            int audioIndex = streamInfo.indexOf("index=1");
-            for (String stream : streamInfo) {
-                if (streamInfo.indexOf(stream) < audioIndex) {
-                    avInfo.put("video_" + stream.split("=")[0], stream.split("=")[1]);
-                } else {
-                    avInfo.put("audio_" + stream.split("=")[0], stream.split("=")[1]);
+        ArrayList<String> streams = new ArrayList<>(Arrays.asList(ffprobeOutput.split("\\[\\/STREAM\\]")));
+        for (String stream : streams) {
+            ArrayList<String> streamInfo = (ArrayList<String>) Arrays.stream(stream.split(System.lineSeparator()))
+                    .filter(str -> str.matches(".+=.*")).collect(Collectors.toList());
+            if (streamInfo.contains("codec_type=video")) {
+                for (String streamValue : streamInfo) {
+                    avInfo.put("video_" + streamValue.split("=")[0], streamValue.split("=")[1]);
                 }
             }
-        } else {
-            for (String stream : streamInfo) {
-                avInfo.put("audio_" + stream.split("=")[0], stream.split("=")[1]);
+            if (streamInfo.contains("codec_type=audio")) {
+                for (String streamValue : streamInfo) {
+                    avInfo.put("audio_" + streamValue.split("=")[0], streamValue.split("=")[1]);
+                }
             }
         }
 
