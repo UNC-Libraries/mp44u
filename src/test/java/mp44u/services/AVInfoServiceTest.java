@@ -18,6 +18,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -59,10 +60,11 @@ public class AVInfoServiceTest {
                     "[/STREAM]");
 
             AVInfoService avInfoService = new AVInfoService();
-            AVInfoService.EncodingOperation encodeOrCopy = avInfoService.getAudioEncodingOperation(options);
+            Map<String,String> avInfo = avInfoService.retrieveAudioVideoInfo(options);
+            AVInfoService.EncodingOperation encodeOrCopy = avInfoService.getAudioEncodingOperation(avInfo);
 
             mockedStatic.verify(() -> CommandUtility.executeCommand(
-                    new ArrayList<>(Arrays.asList("ffprobe", "-v", "quiet", "-select_streams", "a:0",
+                    new ArrayList<>(Arrays.asList("ffprobe", "-v", "quiet",
                             "-show_entries", "stream=codec_name,height,bit_rate,index:stream_tags=language",
                             mockedInput.toString()))));
             assertEquals(EncodingOperation.COPY, encodeOrCopy);
@@ -77,17 +79,25 @@ public class AVInfoServiceTest {
             options.setInputPath(mockedInput);
             mockedStatic.when(() -> CommandUtility.executeCommand(anyList())).thenReturn(
                     "[STREAM]\n" +
+                    "index=0\n" +
                     "codec_name=h264\n" +
                     "height=480\n" +
                     "bit_rate=923373\n" +
                     "TAG:language=eng\n" +
+                    "[/STREAM]\n" +
+                    "[STREAM]\n" +
+                    "index=1\n" +
+                    "codec_name=aac\n" +
+                    "bit_rate=120192\n" +
+                    "TAG:language=und\n" +
                     "[/STREAM]\n");
 
             AVInfoService avInfoService = new AVInfoService();
-            AVInfoService.EncodingOperation encodeOrCopy = avInfoService.getVideoEncodingOperation(options);
+            Map<String,String> avInfo = avInfoService.retrieveAudioVideoInfo(options);
+            AVInfoService.EncodingOperation encodeOrCopy = avInfoService.getVideoEncodingOperation(avInfo);
 
             mockedStatic.verify(() -> CommandUtility.executeCommand(
-                    new ArrayList<>(Arrays.asList("ffprobe", "-v", "quiet", "-select_streams", "v:0",
+                    new ArrayList<>(Arrays.asList("ffprobe", "-v", "quiet",
                             "-show_entries", "stream=codec_name,height,bit_rate,index:stream_tags=language",
                             mockedInput.toString()))));
             assertEquals(EncodingOperation.COPY, encodeOrCopy);
@@ -102,17 +112,25 @@ public class AVInfoServiceTest {
             options.setInputPath(mockedInput);
             mockedStatic.when(() -> CommandUtility.executeCommand(anyList())).thenReturn(
                     "[STREAM]\n" +
-                            "codec_name=h264\n" +
-                            "height=480\n" +
-                            "bit_rate=923373\n" +
-                            "TAG:language=eng\n" +
-                            "[/STREAM]\n");
+                    "index=0\n" +
+                    "codec_name=h264\n" +
+                    "height=480\n" +
+                    "bit_rate=923373\n" +
+                    "TAG:language=eng\n" +
+                    "[/STREAM]\n" +
+                    "[STREAM]\n" +
+                    "index=1\n" +
+                    "codec_name=aac\n" +
+                    "bit_rate=120192\n" +
+                    "TAG:language=und\n" +
+                    "[/STREAM]\n");
 
             AVInfoService avInfoService = new AVInfoService();
-            Subtitles subtitles = avInfoService.getSubtitles(options);
+            Map<String,String> avInfo = avInfoService.retrieveAudioVideoInfo(options);
+            Subtitles subtitles = avInfoService.getSubtitles(avInfo);
 
             mockedStatic.verify(() -> CommandUtility.executeCommand(
-                    new ArrayList<>(Arrays.asList("ffprobe", "-v", "quiet", "-select_streams", "v:0",
+                    new ArrayList<>(Arrays.asList("ffprobe", "-v", "quiet",
                             "-show_entries", "stream=codec_name,height,bit_rate,index:stream_tags=language",
                             mockedInput.toString()))));
             assertEquals(Subtitles.SUBTITLES, subtitles);

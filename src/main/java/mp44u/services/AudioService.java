@@ -11,6 +11,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -34,7 +35,8 @@ public class AudioService {
      * @return path to m4a file
      */
     public Path convertOrCopyAudio(Mp44uOptions options) throws Exception {
-        EncodingOperation audioEncodingOperation = avInfoService.getAudioEncodingOperation(options);
+        Map<String,String> avInfo = avInfoService.retrieveAudioVideoInfo(options);
+        EncodingOperation audioEncodingOperation = avInfoService.getAudioEncodingOperation(avInfo);
 
         return ffmpegEncodeToM4a(options, audioEncodingOperation);
     }

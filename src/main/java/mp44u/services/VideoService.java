@@ -12,6 +12,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -38,9 +39,10 @@ public class VideoService {
      * @return path to mp4 file
      */
     public Path convertOrCopyVideo(Mp44uOptions options) throws Exception {
-        EncodingOperation videoEncodingOperation = avInfoService.getVideoEncodingOperation(options);
-        EncodingOperation audioEncodingOperation = avInfoService.getAudioEncodingOperation(options);
-        Subtitles subtitles = avInfoService.getSubtitles(options);
+        Map<String,String> avInfo = avInfoService.retrieveAudioVideoInfo(options);
+        EncodingOperation videoEncodingOperation = avInfoService.getVideoEncodingOperation(avInfo);
+        EncodingOperation audioEncodingOperation = avInfoService.getAudioEncodingOperation(avInfo);
+        Subtitles subtitles = avInfoService.getSubtitles(avInfo);
 
         return ffmpegEncodeToMp4(options, videoEncodingOperation, audioEncodingOperation, subtitles);
     }
