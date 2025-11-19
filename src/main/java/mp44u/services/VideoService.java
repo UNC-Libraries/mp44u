@@ -1,6 +1,7 @@
 package mp44u.services;
 
 import mp44u.services.AVInfoService.EncodingOperation;
+import mp44u.services.AVInfoService.Subtitles;
 import mp44u.options.Mp44uOptions;
 import mp44u.util.CommandUtility;
 import mp44u.util.FileService;
@@ -11,6 +12,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -22,6 +24,12 @@ public class VideoService {
     private static final Logger log = getLogger(VideoService.class);
 
     private static final String FFMPEG = "ffmpeg";
+    public static final List<String> VIDEO = Arrays.asList("-map_chapters", "-1", "-movflags", "faststart");
+    public static final List<String> SUBTITLES = Arrays.asList("-c:s", "mov_text");
+    public static final List<String> ENCODE = Arrays.asList("-vcodec", "libx264", "-crf", "22",
+            "-vf", "yadif=0:-1:1,scale=trunc(oh*dar/2)*2:min(ih\\,720)",
+            "-force_key_frames", "expr:gte(t,n_forced*2)", "-maxrate", "2M", "-bufsize", "4M", "-pix_fmt", "yuv420p");
+    public static final List<String> COPY = Arrays.asList("-c:v", "copy");
 
     private AVInfoService avInfoService;
 
@@ -31,98 +39,51 @@ public class VideoService {
      * @return path to mp4 file
      */
     public Path convertOrCopyVideo(Mp44uOptions options) throws Exception {
-        Path outputPath = null;
+        Map<String,String> avInfo = avInfoService.retrieveAudioVideoInfo(options);
+        EncodingOperation videoEncodingOperation = avInfoService.getVideoEncodingOperation(avInfo);
+        EncodingOperation audioEncodingOperation = avInfoService.getAudioEncodingOperation(avInfo);
+        Subtitles subtitles = avInfoService.getSubtitles(avInfo);
 
-        EncodingOperation videoEncodingOperation = avInfoService.getVideoEncodingOperation(options);
-        EncodingOperation audioEncodingOperation = avInfoService.getAudioEncodingOperation(options);
+        return ffmpegEncodeToMp4(options, videoEncodingOperation, audioEncodingOperation, subtitles);
+    }
+
+    /**
+     * Run ffmpeg and convert/copy video file to mp4
+     * @param options
+     * @return path to mp4 file
+     */
+    public Path ffmpegEncodeToMp4(Mp44uOptions options, EncodingOperation videoEncodingOperation,
+                                  EncodingOperation audioEncodingOperation, Subtitles subtitles) throws Exception {
+        String inputFile = options.getInputPath().toString();
+        String input = "-i";
+        Path outputPath = options.getOutputPath();
+        String outputFilename = FilenameUtils.getBaseName(inputFile) + ".mp4";
+        Path outputFile = FileService.buildOutputFile(outputPath, outputFilename, ".mp4");
+
+        FileService.validateFiles(inputFile, outputFile);
+
+        List<String> command = new ArrayList<>(Arrays.asList(FFMPEG, input, inputFile, outputFile.toString()));
+        command.addAll(VIDEO);
+
+        // get subtitles
+        if (subtitles.equals(Subtitles.SUBTITLES)) {
+            command.addAll(SUBTITLES);
+        }
+
+        // encode or copy video
         if (videoEncodingOperation.equals(EncodingOperation.ENCODE)) {
-            outputPath = ffmpegConvertToMp4(options, audioEncodingOperation);
-        } else if (videoEncodingOperation.equals(EncodingOperation.COPY)) {
-            outputPath = ffmpegCopyToMp4(options, audioEncodingOperation);
+            command.addAll(ENCODE);
+        } else {
+            command.addAll(COPY);
         }
 
-        return outputPath;
-    }
-
-    /**
-     * Run ffmpeg and convert video file to mp4
-     * @param options
-     * @return path to mp4 file
-     */
-    public Path ffmpegConvertToMp4(Mp44uOptions options, EncodingOperation audioEncodingOperation) throws Exception {
-        String inputFile = options.getInputPath().toString();
-        String input = "-i";
-        String mapChapters = "-map_chapters";
-        String mapChaptersValue = "-1";
-        String vf = "-vf";
-        String vfValue = "yadif=0:-1:1,scale=trunc(oh*dar/2)*2:min(ih\\,720)";
-        String vcodec = "-vcodec";
-        String vcodecValue = "libx264";
-        String forceKeyFrames = "-force_key_frames";
-        String expr = "expr:gte(t,n_forced*2)";
-        String crf = "-crf";
-        String crfValue = "22";
-        String maxrate = "-maxrate";
-        String maxrateValue = "2M";
-        String bufSize = "-bufsize";
-        String bufSizeValue = "4M";
-        String pixFmt = "-pix_fmt";
-        String pixFmtValue = "yuv420p";
-        String acodec = "-acodec";
-        String acodecValue = "libfdk_aac";
-        if (audioEncodingOperation.equals(EncodingOperation.COPY)) {
-            acodecValue = "copy";
+        // encode or copy audio
+        if (audioEncodingOperation.equals(EncodingOperation.ENCODE)) {
+            command.addAll(AudioService.ENCODE);
+        } else {
+            command.addAll(AudioService.COPY);
         }
-        String ab = "-ab";
-        String abValue = "128k";
-        String ditherMethod = "-dither_method";
-        String ditherMethodValue = "triangular";
-        String movflags = "-movflags";
-        String faststart = "faststart";
-        Path outputPath = options.getOutputPath();
-        String outputFilename = FilenameUtils.getBaseName(inputFile) + ".mp4";
-        Path outputFile = FileService.buildOutputFile(outputPath, outputFilename, ".mp4");
 
-        FileService.validateFiles(inputFile, outputFile);
-
-        List<String> command = new ArrayList<>(Arrays.asList(FFMPEG, input, inputFile,
-                mapChapters, mapChaptersValue,
-                vf, vfValue,
-                vcodec, vcodecValue,
-                forceKeyFrames, expr,
-                crf, crfValue, maxrate, maxrateValue,
-                bufSize, bufSizeValue, pixFmt, pixFmtValue, acodec, acodecValue, ab, abValue,
-                ditherMethod, ditherMethodValue, movflags, faststart,
-                outputFile.toString()));
-        CommandUtility.executeCommand(command);
-
-        return outputFile;
-    }
-
-    /**
-     * Run ffmpeg and copy video file to mp4
-     * @param options
-     * @return path to mp4 file
-     */
-    public Path ffmpegCopyToMp4(Mp44uOptions options, EncodingOperation audioEncodingOperation) throws Exception {
-        String inputFile = options.getInputPath().toString();
-        String input = "-i";
-        String vcodec = "-vcodec";
-        String vcodecValue = "copy";
-        String acodec = "-acodec";
-        String acodecValue = "libfdk_aac";
-        if (audioEncodingOperation.equals(EncodingOperation.COPY)) {
-            acodecValue = "copy";
-        }
-        Path outputPath = options.getOutputPath();
-        String outputFilename = FilenameUtils.getBaseName(inputFile) + ".mp4";
-        Path outputFile = FileService.buildOutputFile(outputPath, outputFilename, ".mp4");
-
-        FileService.validateFiles(inputFile, outputFile);
-
-        List<String> command = new ArrayList<>(Arrays.asList(FFMPEG, input, inputFile,
-                vcodec, vcodecValue, acodec, acodecValue,
-                outputFile.toString()));
         CommandUtility.executeCommand(command);
 
         return outputFile;

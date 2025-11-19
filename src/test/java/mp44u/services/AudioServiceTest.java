@@ -1,5 +1,6 @@
 package mp44u.services;
 
+import mp44u.services.AVInfoService.EncodingOperation;
 import mp44u.options.Mp44uOptions;
 import mp44u.util.CommandUtility;
 import org.apache.commons.io.FileUtils;
@@ -57,12 +58,12 @@ public class AudioServiceTest {
 
             AudioService audioService = new AudioService();
             audioService.setAvInfoService(avInfoService);
-            audioService.ffmpegConvertToM4a(options);
+            audioService.ffmpegEncodeToM4a(options, EncodingOperation.ENCODE);
 
             mockedStatic.verify(() -> CommandUtility.executeCommand(
-                    new ArrayList<>(Arrays.asList("ffmpeg", "-i", mockedInput.toString(), "-acodec", "libfdk_aac",
-                            "-b:a", "128k", "-ar", "44100", "-y", "-nostdin", "-dither_method", "triangular",
-                            mockedOutput.toString()))));
+                    new ArrayList<>(Arrays.asList("ffmpeg", "-i", mockedInput.toString(), mockedOutput.toString(),
+                            "-acodec", "aac", "-ab", "128k", "-ar", "44100",
+                            "-y", "-nostdin", "-dither_method", "triangular"))));
         }
     }
 
@@ -78,11 +79,11 @@ public class AudioServiceTest {
 
             AudioService audioService = new AudioService();
             audioService.setAvInfoService(avInfoService);
-            audioService.ffmpegCopyToM4a(options);
+            audioService.ffmpegEncodeToM4a(options, EncodingOperation.COPY);
 
             mockedStatic.verify(() -> CommandUtility.executeCommand(
-                    new ArrayList<>(Arrays.asList("ffmpeg", "-i", mockedInput.toString(), "-acodec", "copy",
-                            mockedOutput.toString()))));
+                    new ArrayList<>(Arrays.asList("ffmpeg", "-i", mockedInput.toString(), mockedOutput.toString(),
+                            "-c:a", "copy"))));
         }
     }
 
@@ -95,7 +96,7 @@ public class AudioServiceTest {
         options.setOutputPath(testOutput.resolve("009"));
 
         var e = assertThrows(FileAlreadyExistsException.class, () -> {
-            service.ffmpegConvertToM4a(options);
+            service.ffmpegEncodeToM4a(options, EncodingOperation.ENCODE);
         });
         assertTrue(e.getMessage().contains("File already exists at "));
     }

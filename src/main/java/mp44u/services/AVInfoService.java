@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -20,6 +21,7 @@ public class AVInfoService {
     private static final Logger log = getLogger(AVInfoService.class);
 
     public enum EncodingOperation { ENCODE, COPY; }
+    public enum Subtitles { SUBTITLES, NO_SUBTITLES; }
     private static final int AUDIO_ENCODING_MIN_BIT_RATE = 192000;
     private static final int VIDEO_ENCODING_MIN_BIT_RATE = 3000000;
     private static final int VIDEO_ENCODING_MIN_HEIGHT = 720;
@@ -29,34 +31,35 @@ public class AVInfoService {
      * @param options
      * @return
       */
-    private Map<String,String> retrieveAudioVideoInfo(Mp44uOptions options, String av) {
+    public Map<String,String> retrieveAudioVideoInfo(Mp44uOptions options) {
         // run ffprobe
         String inputFile = options.getInputPath().toString();
         String ffprobe = "ffprobe";
         String v = "-v";
         String quiet = "quiet";
-        String selectStreams = "-select_streams";
-        String selectedStreams = "";
-        if (av.contains("audio")) {
-            selectedStreams = "a:0";
-        } else if (av.contains("video")) {
-            selectedStreams = "v:0";
-        }
         String showEntries = "-show_entries";
-        String entries = "stream=codec_name,height,bit_rate";
+        String entries = "stream=codec_type,codec_name,height,bit_rate,index:stream_tags=language";
 
-        List<String> command = new ArrayList<>(Arrays.asList(ffprobe, v, quiet, selectStreams, selectedStreams,
+        List<String> command = new ArrayList<>(Arrays.asList(ffprobe, v, quiet,
                 showEntries, entries, inputFile));
         String ffprobeOutput = CommandUtility.executeCommand(command);
 
-        // split ffprobe output around \n and filter for values containing =
+        // split ffprobe output by [/STREAM] and use the codec_type to determine if stream contains audio/video info
         Map<String,String> avInfo = new HashMap<>();
-        List<String> streams = List.of(ffprobeOutput.split(System.lineSeparator()));
-        List<String> streamInfo = streams.stream()
-                .filter(str -> str.matches(".+=.*")).toList();
-
-        for (String stream : streamInfo) {
-            avInfo.put(stream.split("=")[0], stream.split("=")[1]);
+        ArrayList<String> streams = new ArrayList<>(Arrays.asList(ffprobeOutput.split("\\[\\/STREAM\\]")));
+        for (String stream : streams) {
+            ArrayList<String> streamInfo = (ArrayList<String>) Arrays.stream(stream.split(System.lineSeparator()))
+                    .filter(str -> str.matches(".+=.*")).collect(Collectors.toList());
+            if (streamInfo.contains("codec_type=video")) {
+                for (String streamValue : streamInfo) {
+                    avInfo.put("video_" + streamValue.split("=")[0], streamValue.split("=")[1]);
+                }
+            }
+            if (streamInfo.contains("codec_type=audio")) {
+                for (String streamValue : streamInfo) {
+                    avInfo.put("audio_" + streamValue.split("=")[0], streamValue.split("=")[1]);
+                }
+            }
         }
 
         return avInfo;
@@ -65,23 +68,22 @@ public class AVInfoService {
     /**
      * Use AUDIO_ENCODE if false and AUDIO_COPY if true for all audio streams in file
      * codec_name: aac AND bit_rate <= 192000 (i.e., 192kbps)
-     * @param options
+     * @param avInfo
      * @return
      */
-    public EncodingOperation getAudioEncodingOperation(Mp44uOptions options) {
+    public EncodingOperation getAudioEncodingOperation(Map<String, String> avInfo) {
         EncodingOperation audioEncoding = EncodingOperation.ENCODE;
 
-        Map<String,String> avInfo = retrieveAudioVideoInfo(options, "audio");
         String codecName = "audio";
-        if (avInfo.get("codec_name") != null) {
-            codecName = avInfo.get("codec_name");
+        if (avInfo.get("audio_codec_name") != null) {
+            codecName = avInfo.get("audio_codec_name");
         }
 
         int bitRate = AUDIO_ENCODING_MIN_BIT_RATE + 1;
         try {
-            bitRate = Integer.parseInt(avInfo.get("bit_rate"));
+            bitRate = Integer.parseInt(avInfo.get("audio_bit_rate"));
         } catch (NumberFormatException e) {
-            log.warn("bit_rate not found: {}", e.getMessage());
+            log.warn("audio_bit_rate not found: {}", e.getMessage());
         }
 
         if (codecName.contains("aac") && bitRate <= AUDIO_ENCODING_MIN_BIT_RATE) {
@@ -94,30 +96,29 @@ public class AVInfoService {
     /**
      * Use VIDEO_ENCODE if false and VIDEO_COPY if true for all video streams in file
      * codec_name: h264 AND height: <=720 AND bit_rate <= 3000000 (i.e., 3Mbps)
-     * @param options
+     * @param avInfo
      * @return
      */
-    public EncodingOperation getVideoEncodingOperation(Mp44uOptions options) {
+    public EncodingOperation getVideoEncodingOperation(Map<String, String> avInfo) {
         EncodingOperation videoEncoding = EncodingOperation.ENCODE;
 
-        Map<String,String> avInfo = retrieveAudioVideoInfo(options, "video");
         String codecName = "video";
-        if (avInfo.get("codec_name") != null) {
-            codecName = avInfo.get("codec_name");
+        if (avInfo.get("video_codec_name") != null) {
+            codecName = avInfo.get("video_codec_name");
         }
 
         int height = VIDEO_ENCODING_MIN_HEIGHT + 1;
         try {
-            height = Integer.parseInt(avInfo.get("height"));
+            height = Integer.parseInt(avInfo.get("video_height"));
         } catch (NumberFormatException e) {
-            log.warn("height not found: {}", e.getMessage());
+            log.warn("video_height not found: {}", e.getMessage());
         }
 
         int bitRate = VIDEO_ENCODING_MIN_BIT_RATE + 1;
         try {
-            bitRate = Integer.parseInt(avInfo.get("bit_rate"));
+            bitRate = Integer.parseInt(avInfo.get("video_bit_rate"));
         } catch (NumberFormatException e) {
-            log.warn("bit_rate not found: {}", e.getMessage());
+            log.warn("video_bit_rate not found: {}", e.getMessage());
         }
 
         if (codecName.contains("h264") && height <= VIDEO_ENCODING_MIN_HEIGHT
@@ -126,5 +127,19 @@ public class AVInfoService {
         }
 
         return videoEncoding;
+    }
+
+    /**
+     * Check for subtiltes in video file
+     * @param avInfo
+     * @return
+     */
+    public Subtitles getSubtitles(Map<String, String> avInfo) {
+        Subtitles subtitles = Subtitles.NO_SUBTITLES;
+
+        if (avInfo.get("video_TAG:language") != null) {
+            subtitles = Subtitles.SUBTITLES;
+        }
+        return subtitles;
     }
 }
