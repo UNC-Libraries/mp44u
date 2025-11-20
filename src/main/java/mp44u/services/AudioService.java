@@ -50,7 +50,7 @@ public class AudioService {
         String inputFile = options.getInputPath().toString();
         String input = "-i";
         Path outputPath = options.getOutputPath();
-        String outputFilename = FilenameUtils.getBaseName(inputFile) + ".m4a";
+        String outputFilename = FilenameUtils.getBaseName(inputFile);
         Path outputFile = FileService.buildOutputFile(outputPath, outputFilename, ".m4a");
 
         FileService.validateFiles(inputFile, outputFile);

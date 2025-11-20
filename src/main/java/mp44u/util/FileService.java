@@ -23,7 +23,7 @@ public class FileService {
             throws Exception {
         // if the output path is a directory
         if (Files.isDirectory(outputPath)) {
-            return outputPath.resolve(outputFilename);
+            return outputPath.resolve(outputFilename + extension);
             // if the output path is a file
         } else if (Files.exists(outputPath.getParent())) {
             return Path.of(outputPath + extension);

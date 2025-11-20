@@ -57,7 +57,7 @@ public class VideoService {
         String inputFile = options.getInputPath().toString();
         String input = "-i";
         Path outputPath = options.getOutputPath();
-        String outputFilename = FilenameUtils.getBaseName(inputFile) + ".mp4";
+        String outputFilename = FilenameUtils.getBaseName(inputFile);
         Path outputFile = FileService.buildOutputFile(outputPath, outputFilename, ".mp4");
 
         FileService.validateFiles(inputFile, outputFile);
