@@ -152,7 +152,7 @@
                                                              "org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
                                         <transformer implementation=
                                                              "org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                            <mainClass>MP44U.CLIMain</mainClass>
+                                            <mainClass>mp44u.CLIMain</mainClass>
                                         </transformer>
                                     </transformers>
                                     <createDependencyReducedPom>false</createDependencyReducedPom>
