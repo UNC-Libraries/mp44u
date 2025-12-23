@@ -21,8 +21,8 @@ import static org.slf4j.LoggerFactory.getLogger;
  */
 public class CommandUtility {
     private static final Logger log = getLogger(CommandUtility.class);
-    private static final int MAX_TIMEOUT_SECONDS = System.getProperty("mp44u.subcommand.timeout") != null ?
-            Integer.parseInt(System.getProperty("mp44u.subcommand.timeout")) : 60 * 5;
+    public static final int MAX_TIMEOUT_SECONDS = System.getProperty("mp44u.subcommand.timeout") != null ?
+            Integer.parseInt(System.getProperty("mp44u.subcommand.timeout")) : 60 * 20;
 
     private CommandUtility() {
     }
@@ -34,6 +34,7 @@ public class CommandUtility {
      */
     public static String executeCommand(List<String> command) {
         StringBuilder output = new StringBuilder();
+        log.info("max timeout seconds: {}", MAX_TIMEOUT_SECONDS);
         try {
             ProcessBuilder builder = new ProcessBuilder(command);
             builder.redirectErrorStream(true);
