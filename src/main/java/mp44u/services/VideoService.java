@@ -28,7 +28,8 @@ public class VideoService {
     public static final List<String> SUBTITLES = Arrays.asList("-c:s", "mov_text");
     public static final List<String> ENCODE = Arrays.asList("-vcodec", "libx264", "-crf", "22",
             "-vf", "yadif=0:-1:1,scale=trunc(oh*dar/2)*2:min(ih\\,720)",
-            "-force_key_frames", "expr:gte(t,n_forced*2)", "-maxrate", "2M", "-bufsize", "4M", "-pix_fmt", "yuv420p");
+            "-force_key_frames", "expr:gte(t,n_forced*2)", "-maxrate", "2M", "-bufsize", "4M", "-pix_fmt", "yuv420p",
+            "-threads");
     public static final List<String> COPY = Arrays.asList("-c:v", "copy");
 
     private AVInfoService avInfoService;
@@ -73,6 +74,7 @@ public class VideoService {
         // encode or copy video
         if (videoEncodingOperation.equals(EncodingOperation.ENCODE)) {
             command.addAll(ENCODE);
+            command.add(String.valueOf(options.getThreads()));
         } else {
             command.addAll(COPY);
         }
@@ -80,6 +82,7 @@ public class VideoService {
         // encode or copy audio
         if (audioEncodingOperation.equals(EncodingOperation.ENCODE)) {
             command.addAll(AudioService.ENCODE);
+            command.add(String.valueOf(options.getThreads()));
         } else {
             command.addAll(AudioService.COPY);
         }

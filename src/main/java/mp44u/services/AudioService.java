@@ -24,7 +24,7 @@ public class AudioService {
 
     private static final String FFMPEG = "ffmpeg";
     public static final List<String> ENCODE = Arrays.asList("-acodec", "aac", "-ab", "128k", "-ar", "44100",
-            "-y", "-nostdin", "-dither_method", "triangular");
+            "-y", "-nostdin", "-dither_method", "triangular", "-threads");
     public static final List<String> COPY = Arrays.asList("-c:a", "copy");
 
     private AVInfoService avInfoService;
@@ -59,6 +59,7 @@ public class AudioService {
         // encode or copy audio
         if (audioEncodingOperation.equals(EncodingOperation.ENCODE)) {
             command.addAll(ENCODE);
+            command.add(String.valueOf(options.getThreads()));
         } else {
             command.addAll(COPY);
         }
