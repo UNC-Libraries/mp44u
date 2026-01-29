@@ -63,7 +63,7 @@ public class AudioServiceTest {
             mockedStatic.verify(() -> CommandUtility.executeCommand(
                     new ArrayList<>(Arrays.asList("ffmpeg", "-i", mockedInput.toString(), mockedOutput.toString(),
                             "-acodec", "aac", "-ab", "128k", "-ar", "44100",
-                            "-y", "-nostdin", "-dither_method", "triangular"))));
+                            "-y", "-nostdin", "-dither_method", "triangular", "-threads", "0"))));
         }
     }
 

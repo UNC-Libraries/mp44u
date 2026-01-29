@@ -26,6 +26,7 @@ public class AudioService {
     public static final List<String> ENCODE = Arrays.asList("-acodec", "aac", "-ab", "128k", "-ar", "44100",
             "-y", "-nostdin", "-dither_method", "triangular");
     public static final List<String> COPY = Arrays.asList("-c:a", "copy");
+    public static final String THREADS = "-threads";
 
     private AVInfoService avInfoService;
 
@@ -59,6 +60,8 @@ public class AudioService {
         // encode or copy audio
         if (audioEncodingOperation.equals(EncodingOperation.ENCODE)) {
             command.addAll(ENCODE);
+            command.add(THREADS);
+            command.add(String.valueOf(options.getThreads()));
         } else {
             command.addAll(COPY);
         }

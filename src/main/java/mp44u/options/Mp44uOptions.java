@@ -14,6 +14,11 @@ public class Mp44uOptions {
             description = "Destination for converted images. You must set the output path manually, no default.")
     private Path outputPath;
 
+    @Option(names = {"-t", "-threads"},
+            description = "Number of threads used for encoding",
+            defaultValue = "0")
+    private int threads;
+
     public Path getInputPath() {
         return inputPath;
     }
@@ -28,5 +33,13 @@ public class Mp44uOptions {
 
     public void setOutputPath(Path outputPath) {
         this.outputPath = outputPath;
+    }
+
+    public int getThreads() {
+        return threads;
+    }
+
+    public void setThreads(int threads) {
+        this.threads = threads;
     }
 }
