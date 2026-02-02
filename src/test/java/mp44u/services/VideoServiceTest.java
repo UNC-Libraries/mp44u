@@ -62,14 +62,14 @@ public class VideoServiceTest {
                     Subtitles.SUBTITLES);
 
             mockedStatic.verify(() -> CommandUtility.executeCommand(
-                    new ArrayList<>(Arrays.asList("ffmpeg", "-i", mockedInput.toString(), mockedOutput.toString(),
+                    new ArrayList<>(Arrays.asList("ffmpeg", "-i", mockedInput.toString(),
                             "-map_chapters", "-1", "-movflags", "faststart", "-c:s", "mov_text",
                             "-vcodec", "libx264", "-crf", "22",
                             "-vf", "yadif=0:-1:1,scale=trunc(oh*dar/2)*2:min(ih\\,720)",
                             "-force_key_frames", "expr:gte(t,n_forced*2)", "-maxrate", "2M", "-bufsize", "4M",
                             "-pix_fmt", "yuv420p", "-threads", "0",
                             "-acodec", "aac", "-ab", "128k", "-ar", "44100", "-y", "-nostdin",
-                            "-dither_method", "triangular", "-threads", "0"))));
+                            "-dither_method", "triangular", "-threads", "0", mockedOutput.toString()))));
         }
     }
 
@@ -89,10 +89,10 @@ public class VideoServiceTest {
                     Subtitles.SUBTITLES);
 
             mockedStatic.verify(() -> CommandUtility.executeCommand(
-                    new ArrayList<>(Arrays.asList("ffmpeg", "-i", mockedInput.toString(), mockedOutput.toString(),
+                    new ArrayList<>(Arrays.asList("ffmpeg", "-i", mockedInput.toString(),
                             "-map_chapters", "-1", "-movflags", "faststart", "-c:s", "mov_text", "-c:v", "copy",
                             "-acodec", "aac", "-ab", "128k", "-ar", "44100", "-y", "-nostdin",
-                            "-dither_method", "triangular", "-threads", "0"))));
+                            "-dither_method", "triangular", "-threads", "0", mockedOutput.toString()))));
         }
     }
 

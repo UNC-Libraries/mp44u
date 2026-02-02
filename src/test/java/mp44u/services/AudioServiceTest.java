@@ -61,9 +61,9 @@ public class AudioServiceTest {
             audioService.ffmpegEncodeToM4a(options, EncodingOperation.ENCODE);
 
             mockedStatic.verify(() -> CommandUtility.executeCommand(
-                    new ArrayList<>(Arrays.asList("ffmpeg", "-i", mockedInput.toString(), mockedOutput.toString(),
-                            "-acodec", "aac", "-ab", "128k", "-ar", "44100",
-                            "-y", "-nostdin", "-dither_method", "triangular", "-threads", "0"))));
+                    new ArrayList<>(Arrays.asList("ffmpeg", "-i", mockedInput.toString(),
+                            "-acodec", "aac", "-ab", "128k", "-ar", "44100", "-y", "-nostdin",
+                            "-dither_method", "triangular", "-threads", "0", mockedOutput.toString()))));
         }
     }
 
@@ -82,8 +82,8 @@ public class AudioServiceTest {
             audioService.ffmpegEncodeToM4a(options, EncodingOperation.COPY);
 
             mockedStatic.verify(() -> CommandUtility.executeCommand(
-                    new ArrayList<>(Arrays.asList("ffmpeg", "-i", mockedInput.toString(), mockedOutput.toString(),
-                            "-c:a", "copy"))));
+                    new ArrayList<>(Arrays.asList("ffmpeg", "-i", mockedInput.toString(),
+                            "-c:a", "copy", mockedOutput.toString()))));
         }
     }
 

@@ -63,7 +63,7 @@ public class VideoService {
 
         FileService.validateFiles(inputFile, outputFile);
 
-        List<String> command = new ArrayList<>(Arrays.asList(FFMPEG, input, inputFile, outputFile.toString()));
+        List<String> command = new ArrayList<>(Arrays.asList(FFMPEG, input, inputFile));
         command.addAll(VIDEO);
 
         // get subtitles
@@ -89,6 +89,7 @@ public class VideoService {
             command.addAll(AudioService.COPY);
         }
 
+        command.add(outputFile.toString());
         CommandUtility.executeCommand(command);
 
         return outputFile;

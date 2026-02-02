@@ -56,7 +56,7 @@ public class AudioService {
 
         FileService.validateFiles(inputFile, outputFile);
 
-        List<String> command = new ArrayList<>(Arrays.asList(FFMPEG, input, inputFile, outputFile.toString()));
+        List<String> command = new ArrayList<>(Arrays.asList(FFMPEG, input, inputFile));
         // encode or copy audio
         if (audioEncodingOperation.equals(EncodingOperation.ENCODE)) {
             command.addAll(ENCODE);
@@ -66,6 +66,7 @@ public class AudioService {
             command.addAll(COPY);
         }
 
+        command.add(outputFile.toString());
         CommandUtility.executeCommand(command);
 
         return outputFile;
