@@ -44,13 +44,19 @@ public class CommandUtility {
         executor.setWatchdog(watchdog);
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        executor.setStreamHandler(new PumpStreamHandler(outputStream));
+        ByteArrayOutputStream errorStream = new ByteArrayOutputStream();
+        executor.setStreamHandler(new PumpStreamHandler(outputStream, errorStream));
 
         try {
-            executor.execute(cmdLine);
+            int exitValue = executor.execute(cmdLine);
+            if (watchdog.killedProcess()) {
+                log.warn("Command timed out after {}s: {}", MAX_TIMEOUT_SECONDS, String.join(" ", command));
+                throw new CommandException("Command timed out", command, outputStream.toString(), exitValue);
+            }
             return outputStream.toString();
         } catch (IOException e) {
-            throw new CommandException("Command failed to execute", command, outputStream.toString(), e);
+            String output = outputStream + "\n" + errorStream;
+            throw new CommandException("Command failed to execute", command, output, e);
         }
     }
 }
