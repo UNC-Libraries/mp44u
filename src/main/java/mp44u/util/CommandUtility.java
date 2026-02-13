@@ -12,7 +12,6 @@ import org.slf4j.Logger;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.Duration;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 /**
@@ -39,7 +38,7 @@ public class CommandUtility {
 
         DefaultExecutor executor = DefaultExecutor.builder().get();
         var watchdog = ExecuteWatchdog.builder()
-                                      .setTimeout(Duration.of(MAX_TIMEOUT_SECONDS, ChronoUnit.SECONDS))
+                                      .setTimeout(Duration.ofSeconds(MAX_TIMEOUT_SECONDS))
                                       .get();
         executor.setWatchdog(watchdog);
 
@@ -49,6 +48,7 @@ public class CommandUtility {
 
         try {
             int exitValue = executor.execute(cmdLine);
+            log.error("Finished running command with exit code {}: {}", exitValue, String.join(" ", command));
             if (watchdog.killedProcess()) {
                 log.warn("Command timed out after {}s: {}", MAX_TIMEOUT_SECONDS, String.join(" ", command));
                 throw new CommandException("Command timed out", command, outputStream.toString(), exitValue);
