@@ -33,7 +33,7 @@ public class CommandUtility {
      * @return command output
      */
     public static String executeCommand(List<String> command) {
-        log.debug("Executing command: {}", String.join(" ", command));
+        log.debug("Executing command with timeout {}s: {}", MAX_TIMEOUT_SECONDS, String.join(" ", command));
         CommandLine cmdLine = CommandLine.parse(command.getFirst());
         cmdLine.addArguments(command.subList(1, command.size()).toArray(new String[0]));
 
