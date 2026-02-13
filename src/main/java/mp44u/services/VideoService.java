@@ -30,6 +30,7 @@ public class VideoService {
             "-vf", "yadif=0:-1:1,scale=trunc(oh*dar/2)*2:min(ih\\,720)",
             "-force_key_frames", "expr:gte(t,n_forced*2)", "-maxrate", "2M", "-bufsize", "4M", "-pix_fmt", "yuv420p");
     public static final List<String> COPY = Arrays.asList("-c:v", "copy");
+    public static final String SKIP_AUDIO = "-an";
     public static final String THREADS = "-threads";
 
     private AVInfoService avInfoService;
@@ -39,13 +40,20 @@ public class VideoService {
      * @param options
      * @return path to mp4 file
      */
-    public Path convertOrCopyVideo(Mp44uOptions options) throws Exception {
+    public void convertOrCopyVideo(Mp44uOptions options) throws Exception {
         Map<String,String> avInfo = avInfoService.retrieveAudioVideoInfo(options);
         EncodingOperation videoEncodingOperation = avInfoService.getVideoEncodingOperation(avInfo);
         EncodingOperation audioEncodingOperation = avInfoService.getAudioEncodingOperation(avInfo);
         Subtitles subtitles = avInfoService.getSubtitles(avInfo);
+        boolean videoEncodable = avInfoService.videoEncodable(avInfo);
+        boolean audioEncodable = avInfoService.audioEncodable(avInfo);
 
-        return ffmpegEncodeToMp4(options, videoEncodingOperation, audioEncodingOperation, subtitles);
+        if (videoEncodable) {
+            ffmpegEncodeToMp4(options, videoEncodingOperation, audioEncodingOperation, subtitles, audioEncodable);
+        } else {
+            log.warn("{} not encodable, no video_bit_rate found", options.getInputPath());
+        }
+
     }
 
     /**
@@ -54,7 +62,8 @@ public class VideoService {
      * @return path to mp4 file
      */
     public Path ffmpegEncodeToMp4(Mp44uOptions options, EncodingOperation videoEncodingOperation,
-                                  EncodingOperation audioEncodingOperation, Subtitles subtitles) throws Exception {
+                                  EncodingOperation audioEncodingOperation, Subtitles subtitles,
+                                  boolean audioEncodeable) throws Exception {
         String inputFile = options.getInputPath().toString();
         String input = "-i";
         Path outputPath = options.getOutputPath();
@@ -80,13 +89,17 @@ public class VideoService {
             command.addAll(COPY);
         }
 
-        // encode or copy audio
-        if (audioEncodingOperation.equals(EncodingOperation.ENCODE)) {
-            command.addAll(AudioService.ENCODE);
-            command.add(THREADS);
-            command.add(String.valueOf(options.getThreads()));
+        // if audio exists, encode or copy audio
+        if (audioEncodeable) {
+            if (audioEncodingOperation.equals(EncodingOperation.ENCODE)) {
+                command.addAll(AudioService.ENCODE);
+                command.add(THREADS);
+                command.add(String.valueOf(options.getThreads()));
+            } else {
+                command.addAll(AudioService.COPY);
+            }
         } else {
-            command.addAll(AudioService.COPY);
+            command.add(SKIP_AUDIO);
         }
 
         command.add(outputFile.toString());

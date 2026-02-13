@@ -135,7 +135,7 @@ public class FormatTransformationIT {
         options.setOutputPath(testOutput.resolve("009_access"));
 
         Path outputFile = videoService.ffmpegEncodeToMp4(options, EncodingOperation.COPY, EncodingOperation.COPY,
-                AVInfoService.Subtitles.SUBTITLES);
+                AVInfoService.Subtitles.SUBTITLES, true);
 
         assertTrue(Files.exists(outputFile));
         assertEquals(testOutput.resolve("009_access.mp4"), outputFile);
@@ -148,10 +148,9 @@ public class FormatTransformationIT {
         options.setInputPath(testFile);
         options.setOutputPath(testOutput.resolve("009_access"));
 
-        Path outputFile = videoService.convertOrCopyVideo(options);
+        videoService.convertOrCopyVideo(options);
 
-        assertTrue(Files.exists(outputFile));
-        assertEquals(testOutput.resolve("009_access.mp4"), outputFile);
+        assertTrue(Files.exists(testOutput.resolve("009_access")));
     }
 
     @Test
@@ -162,7 +161,7 @@ public class FormatTransformationIT {
         options.setOutputPath(testOutput.resolve("AMEN"));
 
         Path outputFile = videoService.ffmpegEncodeToMp4(options, EncodingOperation.ENCODE, EncodingOperation.ENCODE,
-                AVInfoService.Subtitles.SUBTITLES);
+                AVInfoService.Subtitles.SUBTITLES, true);
 
         assertTrue(Files.exists(outputFile));
         assertEquals(testOutput.resolve("AMEN.mp4"), outputFile);
@@ -176,7 +175,7 @@ public class FormatTransformationIT {
         options.setOutputPath(testOutput.resolve("00288"));
 
         Path outputFile = videoService.ffmpegEncodeToMp4(options, EncodingOperation.ENCODE, EncodingOperation.ENCODE,
-                AVInfoService.Subtitles.SUBTITLES);
+                AVInfoService.Subtitles.SUBTITLES, true);
 
         assertTrue(Files.exists(outputFile));
         assertEquals(testOutput.resolve("00288.mp4"), outputFile);

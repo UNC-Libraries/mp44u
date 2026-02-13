@@ -12,6 +12,8 @@ import java.nio.file.Path;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.slf4j.LoggerFactory.getLogger;
 
 public class EncodingOperationIT {
@@ -22,6 +24,43 @@ public class EncodingOperationIT {
     @BeforeEach
     public void setup() throws Exception {
         service = new AVInfoService();
+    }
+
+    @Test
+    public void testGetAudioEncodableAac() throws Exception {
+        Path testFile = Path.of("src/test/resources/3AudioTrack.aiff");
+        Mp44uOptions options = new Mp44uOptions();
+        options.setInputPath(testFile);
+
+        Map<String,String> avInfo = service.retrieveAudioVideoInfo(options);
+        boolean audioEncodable = service.audioEncodable(avInfo);
+        assertTrue(audioEncodable);
+    }
+
+    @Test
+    public void testGetVideoEncodableMov() throws Exception {
+        Path testFile = Path.of("src/test/resources/AMEN.MOV");
+        Mp44uOptions options = new Mp44uOptions();
+        options.setInputPath(testFile);
+
+        Map<String,String> avInfo = service.retrieveAudioVideoInfo(options);
+        boolean audioEncodable = service.audioEncodable(avInfo);
+        boolean videoEncodable = service.videoEncodable(avInfo);
+        assertTrue(audioEncodable);
+        assertTrue(videoEncodable);
+    }
+
+    @Test
+    public void testGetVideoEncodableAudioUncodableMov() throws Exception {
+        Path testFile = Path.of("src/test/resources/amen_noaudio.MOV");
+        Mp44uOptions options = new Mp44uOptions();
+        options.setInputPath(testFile);
+
+        Map<String,String> avInfo = service.retrieveAudioVideoInfo(options);
+        boolean audioEncodable = service.audioEncodable(avInfo);
+        boolean videoEncodable = service.videoEncodable(avInfo);
+        assertFalse(audioEncodable);
+        assertTrue(videoEncodable);
     }
 
     @Test

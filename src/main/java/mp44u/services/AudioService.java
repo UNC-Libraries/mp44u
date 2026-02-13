@@ -32,14 +32,20 @@ public class AudioService {
 
     /**
      * Encode or copy audio file
+     *
      * @param options
-     * @return path to m4a file
+     * @return
      */
-    public Path convertOrCopyAudio(Mp44uOptions options) throws Exception {
+    public void convertOrCopyAudio(Mp44uOptions options) throws Exception {
         Map<String,String> avInfo = avInfoService.retrieveAudioVideoInfo(options);
         EncodingOperation audioEncodingOperation = avInfoService.getAudioEncodingOperation(avInfo);
 
-        return ffmpegEncodeToM4a(options, audioEncodingOperation);
+        if (avInfoService.audioEncodable(avInfo)) {
+            ffmpegEncodeToM4a(options, audioEncodingOperation);
+        } else {
+            log.warn("{} not encodable, no audio_bit_rate found", options.getInputPath());
+        }
+
     }
 
     /**

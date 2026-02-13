@@ -66,6 +66,36 @@ public class AVInfoService {
     }
 
     /**
+     * Determine if the file's audio is encodable (has a non-zero bit_rate)
+     * @param avInfo
+     * @return
+     */
+    public boolean audioEncodable(Map<String, String> avInfo) {
+        boolean encodable = false;
+
+        if (avInfo.get("audio_bit_rate").matches("\\d+")) {
+            encodable = true;
+        }
+
+        return encodable;
+    }
+
+    /**
+     * Determine if the file's video is encodable (has a non-zero bit_rate)
+     * @param avInfo
+     * @return
+     */
+    public boolean videoEncodable(Map<String, String> avInfo) {
+        boolean encodable = false;
+
+        if (avInfo.get("video_bit_rate").matches("\\d+")) {
+            encodable = true;
+        }
+
+        return encodable;
+    }
+
+    /**
      * Use AUDIO_ENCODE if false and AUDIO_COPY if true for all audio streams in file
      * codec_name: aac AND bit_rate <= 192000 (i.e., 192kbps)
      * @param avInfo
