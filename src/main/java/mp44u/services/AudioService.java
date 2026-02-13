@@ -24,8 +24,9 @@ public class AudioService {
 
     private static final String FFMPEG = "ffmpeg";
     private static final String NO_STATS = "-nostats";
+    private static final String NO_STDIN = "-nostdin";
     public static final List<String> ENCODE = Arrays.asList("-acodec", "aac", "-ab", "128k", "-ar", "44100",
-            "-y", "-nostdin", "-dither_method", "triangular");
+            "-y", "-dither_method", "triangular");
     public static final List<String> COPY = Arrays.asList("-c:a", "copy");
     public static final String THREADS = "-threads";
 
@@ -57,7 +58,7 @@ public class AudioService {
 
         FileService.validateFiles(inputFile, outputFile);
 
-        List<String> command = new ArrayList<>(Arrays.asList(FFMPEG, NO_STATS, input, inputFile));
+        List<String> command = new ArrayList<>(Arrays.asList(FFMPEG, NO_STDIN, NO_STATS, input, inputFile));
         // encode or copy audio
         if (audioEncodingOperation.equals(EncodingOperation.ENCODE)) {
             command.addAll(ENCODE);
