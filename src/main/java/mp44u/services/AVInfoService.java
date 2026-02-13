@@ -73,7 +73,7 @@ public class AVInfoService {
     public boolean audioEncodable(Map<String, String> avInfo) {
         boolean encodable = false;
 
-        if (avInfo.get("audio_bit_rate").matches("\\d+")) {
+        if (avInfo.containsKey("audio_bit_rate") && avInfo.get("audio_bit_rate").matches("\\d+")) {
             encodable = true;
         }
 
@@ -88,7 +88,7 @@ public class AVInfoService {
     public boolean videoEncodable(Map<String, String> avInfo) {
         boolean encodable = false;
 
-        if (avInfo.get("video_bit_rate").matches("\\d+")) {
+        if (avInfo.containsKey("video_bit_rate") && avInfo.get("video_bit_rate").matches("\\d+")) {
             encodable = true;
         }
 

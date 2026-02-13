@@ -52,7 +52,7 @@ public class EncodingOperationIT {
 
     @Test
     public void testGetVideoEncodableAudioUncodableMov() throws Exception {
-        Path testFile = Path.of("src/test/resources/amen_noaudio.MOV");
+        Path testFile = Path.of("src/test/resources/amen_noaudio.mov");
         Mp44uOptions options = new Mp44uOptions();
         options.setInputPath(testFile);
 
