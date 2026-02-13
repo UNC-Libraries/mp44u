@@ -23,6 +23,7 @@ public class AudioService {
     private static final Logger log = getLogger(AudioService.class);
 
     private static final String FFMPEG = "ffmpeg";
+    private static final String NO_STATS = "-nostats";
     public static final List<String> ENCODE = Arrays.asList("-acodec", "aac", "-ab", "128k", "-ar", "44100",
             "-y", "-nostdin", "-dither_method", "triangular");
     public static final List<String> COPY = Arrays.asList("-c:a", "copy");
@@ -56,7 +57,7 @@ public class AudioService {
 
         FileService.validateFiles(inputFile, outputFile);
 
-        List<String> command = new ArrayList<>(Arrays.asList(FFMPEG, input, inputFile));
+        List<String> command = new ArrayList<>(Arrays.asList(FFMPEG, NO_STATS, input, inputFile));
         // encode or copy audio
         if (audioEncodingOperation.equals(EncodingOperation.ENCODE)) {
             command.addAll(ENCODE);
@@ -67,6 +68,7 @@ public class AudioService {
         }
 
         command.add(outputFile.toString());
+        log.debug("Running audio command: {}", String.join(" ", command));
         CommandUtility.executeCommand(command);
 
         return outputFile;

@@ -24,6 +24,7 @@ public class VideoService {
     private static final Logger log = getLogger(VideoService.class);
 
     private static final String FFMPEG = "ffmpeg";
+    private static final String NO_STATS = "-nostats";
     public static final List<String> VIDEO = Arrays.asList("-map_chapters", "-1", "-movflags", "faststart");
     public static final List<String> SUBTITLES = Arrays.asList("-c:s", "mov_text");
     public static final List<String> ENCODE = Arrays.asList("-vcodec", "libx264", "-crf", "22",
@@ -63,7 +64,7 @@ public class VideoService {
 
         FileService.validateFiles(inputFile, outputFile);
 
-        List<String> command = new ArrayList<>(Arrays.asList(FFMPEG, input, inputFile));
+        List<String> command = new ArrayList<>(Arrays.asList(FFMPEG, NO_STATS, input, inputFile));
         command.addAll(VIDEO);
 
         // get subtitles
@@ -90,6 +91,7 @@ public class VideoService {
         }
 
         command.add(outputFile.toString());
+        log.debug("Running video command: {}", String.join(" ", command));
         CommandUtility.executeCommand(command);
 
         return outputFile;
