@@ -43,9 +43,7 @@ public class CommandUtility {
         DefaultExecutor executor = DefaultExecutor.builder().get();
         ExecuteWatchdog watchdog = null;
         if (maxTimeoutSeconds > 0) {
-            watchdog = ExecuteWatchdog.builder()
-                                          .setTimeout(Duration.ofSeconds(maxTimeoutSeconds))
-                                          .get();
+            watchdog = EscalatingExecuteWatchdog.create(Duration.ofSeconds(maxTimeoutSeconds));
             executor.setWatchdog(watchdog);
         }
 
