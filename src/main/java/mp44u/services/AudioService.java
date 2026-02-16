@@ -7,6 +7,8 @@ import mp44u.util.FileService;
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -37,6 +39,9 @@ public class AudioService {
      * @return
      */
     public void convertOrCopyAudio(Mp44uOptions options) throws Exception {
+        if (Files.notExists(options.getInputPath())) {
+            throw new NoSuchFileException(options.getInputPath().toString());
+        }
         Map<String,String> avInfo = avInfoService.retrieveAudioVideoInfo(options);
         EncodingOperation audioEncodingOperation = avInfoService.getAudioEncodingOperation(avInfo);
 

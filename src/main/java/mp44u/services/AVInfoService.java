@@ -100,9 +100,10 @@ public class AVInfoService {
     public boolean videoEncodable(Map<String, String> avInfo) {
         boolean encodable = false;
 
-        if ((avInfo.containsKey("video_bit_rate") && avInfo.get("video_bit_rate").matches("\\d+"))
-            && !avInfo.get("video_codec_name").matches("vc1")) {
-            encodable = true;
+        if (avInfo.containsKey("video_bit_rate") && avInfo.get("video_bit_rate").matches("\\d+")) {
+            if (!avInfo.get("video_codec_name").matches("vc1")) {
+                encodable = true;
+            }
         }
 
         return encodable;

@@ -150,7 +150,7 @@ public class FormatTransformationIT {
 
         videoService.convertOrCopyVideo(options);
 
-        assertTrue(Files.exists(testOutput.resolve("009_access")));
+        assertTrue(Files.exists(testOutput.resolve("009_access.mp4")));
     }
 
     @Test
