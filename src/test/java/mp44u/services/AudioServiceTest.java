@@ -19,6 +19,7 @@ import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.MockitoAnnotations.openMocks;
 
@@ -54,16 +55,18 @@ public class AudioServiceTest {
             Mp44uOptions options = new Mp44uOptions();
             options.setInputPath(mockedInput);
             options.setOutputPath(testOutput.resolve("test_output"));
-            mockedStatic.when(() -> CommandUtility.executeCommand(anyList())).thenReturn(mockedOutput.toString());
+            options.setSubcommandTimeout(5);
+            mockedStatic.when(() -> CommandUtility.executeCommand(anyList(), anyInt()))
+                    .thenReturn(mockedOutput.toString());
 
             AudioService audioService = new AudioService();
             audioService.setAvInfoService(avInfoService);
             audioService.ffmpegEncodeToM4a(options, EncodingOperation.ENCODE);
 
             mockedStatic.verify(() -> CommandUtility.executeCommand(
-                    new ArrayList<>(Arrays.asList("ffmpeg", "-nostats", "-i", mockedInput.toString(),
-                            "-acodec", "aac", "-ab", "128k", "-ar", "44100", "-y", "-nostdin",
-                            "-dither_method", "triangular", "-threads", "0", mockedOutput.toString()))));
+                    Arrays.asList("ffmpeg", "-nostdin", "-nostats", "-i", mockedInput.toString(),
+                            "-acodec", "aac", "-ab", "128k", "-ar", "44100", "-y",
+                            "-dither_method", "triangular", "-threads", "0", mockedOutput.toString()), 5));
         }
     }
 
@@ -75,15 +78,16 @@ public class AudioServiceTest {
             Mp44uOptions options = new Mp44uOptions();
             options.setInputPath(mockedInput);
             options.setOutputPath(testOutput.resolve("test_output"));
-            mockedStatic.when(() -> CommandUtility.executeCommand(anyList())).thenReturn(mockedOutput.toString());
+            mockedStatic.when(() -> CommandUtility.executeCommand(anyList(), anyInt()))
+                    .thenReturn(mockedOutput.toString());
 
             AudioService audioService = new AudioService();
             audioService.setAvInfoService(avInfoService);
             audioService.ffmpegEncodeToM4a(options, EncodingOperation.COPY);
 
             mockedStatic.verify(() -> CommandUtility.executeCommand(
-                    new ArrayList<>(Arrays.asList("ffmpeg", "-nostats", "-i", mockedInput.toString(),
-                            "-c:a", "copy", mockedOutput.toString()))));
+                    Arrays.asList("ffmpeg", "-nostdin", "-nostats", "-i", mockedInput.toString(),
+                            "-c:a", "copy", mockedOutput.toString()), 0));
         }
     }
 

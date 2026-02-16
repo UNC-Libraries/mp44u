@@ -42,7 +42,7 @@ public class AVInfoService {
 
         List<String> command = new ArrayList<>(Arrays.asList(ffprobe, v, quiet,
                 showEntries, entries, inputFile));
-        String ffprobeOutput = CommandUtility.executeCommand(command);
+        String ffprobeOutput = CommandUtility.executeCommand(command, options.getSubcommandTimeout());
 
         // split ffprobe output by [/STREAM] and use the codec_type to determine if stream contains audio/video info
         Map<String,String> avInfo = new HashMap<>();

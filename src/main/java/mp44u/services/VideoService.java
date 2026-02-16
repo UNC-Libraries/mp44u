@@ -93,7 +93,7 @@ public class VideoService {
 
         command.add(outputFile.toString());
         log.debug("Running video command: {}", String.join(" ", command));
-        CommandUtility.executeCommand(command);
+        CommandUtility.executeCommand(command, options.getSubcommandTimeout());
 
         return outputFile;
     }

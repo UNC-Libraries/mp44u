@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.MockitoAnnotations.openMocks;
 
@@ -53,7 +54,7 @@ public class AVInfoServiceTest {
             Path mockedInput = testOutput.resolve("test_input.m4a");
             Mp44uOptions options = new Mp44uOptions();
             options.setInputPath(mockedInput);
-            mockedStatic.when(() -> CommandUtility.executeCommand(anyList())).thenReturn(
+            mockedStatic.when(() -> CommandUtility.executeCommand(anyList(), anyInt())).thenReturn(
                     "[STREAM]\n" +
                     "codec_name=aac\n" +
                     "codec_type=audio\n" +
@@ -65,9 +66,9 @@ public class AVInfoServiceTest {
             AVInfoService.EncodingOperation encodeOrCopy = avInfoService.getAudioEncodingOperation(avInfo);
 
             mockedStatic.verify(() -> CommandUtility.executeCommand(
-                    new ArrayList<>(Arrays.asList("ffprobe", "-v", "quiet",
+                    Arrays.asList("ffprobe", "-v", "quiet",
                             "-show_entries", "stream=codec_type,codec_name,height,bit_rate,index:stream_tags=language",
-                            mockedInput.toString()))));
+                            mockedInput.toString()), 0));
             assertEquals(EncodingOperation.COPY, encodeOrCopy);
         }
     }
@@ -78,7 +79,7 @@ public class AVInfoServiceTest {
             Path mockedInput = testOutput.resolve("test_input.mp4");
             Mp44uOptions options = new Mp44uOptions();
             options.setInputPath(mockedInput);
-            mockedStatic.when(() -> CommandUtility.executeCommand(anyList())).thenReturn(
+            mockedStatic.when(() -> CommandUtility.executeCommand(anyList(), anyInt())).thenReturn(
                     "[STREAM]\n" +
                     "index=0\n" +
                     "codec_name=h264\n" +
@@ -100,9 +101,9 @@ public class AVInfoServiceTest {
             AVInfoService.EncodingOperation encodeOrCopy = avInfoService.getVideoEncodingOperation(avInfo);
 
             mockedStatic.verify(() -> CommandUtility.executeCommand(
-                    new ArrayList<>(Arrays.asList("ffprobe", "-v", "quiet",
+                    Arrays.asList("ffprobe", "-v", "quiet",
                             "-show_entries", "stream=codec_type,codec_name,height,bit_rate,index:stream_tags=language",
-                            mockedInput.toString()))));
+                            mockedInput.toString()), 0));
             assertEquals(EncodingOperation.COPY, encodeOrCopy);
         }
     }
@@ -113,7 +114,7 @@ public class AVInfoServiceTest {
             Path mockedInput = testOutput.resolve("test_input.mp4");
             Mp44uOptions options = new Mp44uOptions();
             options.setInputPath(mockedInput);
-            mockedStatic.when(() -> CommandUtility.executeCommand(anyList())).thenReturn(
+            mockedStatic.when(() -> CommandUtility.executeCommand(anyList(), anyInt())).thenReturn(
                     "[STREAM]\n" +
                             "index=0\n" +
                             "codec_name=aac\n" +
@@ -135,9 +136,9 @@ public class AVInfoServiceTest {
             AVInfoService.EncodingOperation encodeOrCopy = avInfoService.getVideoEncodingOperation(avInfo);
 
             mockedStatic.verify(() -> CommandUtility.executeCommand(
-                    new ArrayList<>(Arrays.asList("ffprobe", "-v", "quiet",
+                    Arrays.asList("ffprobe", "-v", "quiet",
                             "-show_entries", "stream=codec_type,codec_name,height,bit_rate,index:stream_tags=language",
-                            mockedInput.toString()))));
+                            mockedInput.toString()), 0));
             assertEquals(EncodingOperation.COPY, encodeOrCopy);
         }
     }
@@ -148,7 +149,7 @@ public class AVInfoServiceTest {
             Path mockedInput = testOutput.resolve("test_input.mp4");
             Mp44uOptions options = new Mp44uOptions();
             options.setInputPath(mockedInput);
-            mockedStatic.when(() -> CommandUtility.executeCommand(anyList())).thenReturn(
+            mockedStatic.when(() -> CommandUtility.executeCommand(anyList(), anyInt())).thenReturn(
                     "[STREAM]\n" +
                             "index=0\n" +
                             "codec_name=h264\n" +
@@ -163,9 +164,9 @@ public class AVInfoServiceTest {
             AVInfoService.EncodingOperation encodeOrCopy = avInfoService.getVideoEncodingOperation(avInfo);
 
             mockedStatic.verify(() -> CommandUtility.executeCommand(
-                    new ArrayList<>(Arrays.asList("ffprobe", "-v", "quiet",
+                    Arrays.asList("ffprobe", "-v", "quiet",
                             "-show_entries", "stream=codec_type,codec_name,height,bit_rate,index:stream_tags=language",
-                            mockedInput.toString()))));
+                            mockedInput.toString()), 0));
             assertEquals(EncodingOperation.COPY, encodeOrCopy);
         }
     }
@@ -176,7 +177,7 @@ public class AVInfoServiceTest {
             Path mockedInput = testOutput.resolve("test_input.mp4");
             Mp44uOptions options = new Mp44uOptions();
             options.setInputPath(mockedInput);
-            mockedStatic.when(() -> CommandUtility.executeCommand(anyList())).thenReturn(
+            mockedStatic.when(() -> CommandUtility.executeCommand(anyList(), anyInt())).thenReturn(
                     "[STREAM]\n" +
                     "index=0\n" +
                     "codec_name=h264\n" +
@@ -198,9 +199,9 @@ public class AVInfoServiceTest {
             Subtitles subtitles = avInfoService.getSubtitles(avInfo);
 
             mockedStatic.verify(() -> CommandUtility.executeCommand(
-                    new ArrayList<>(Arrays.asList("ffprobe", "-v", "quiet",
+                    Arrays.asList("ffprobe", "-v", "quiet",
                             "-show_entries", "stream=codec_type,codec_name,height,bit_rate,index:stream_tags=language",
-                            mockedInput.toString()))));
+                            mockedInput.toString()), 0));
             assertEquals(Subtitles.SUBTITLES, subtitles);
         }
     }

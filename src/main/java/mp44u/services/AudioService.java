@@ -70,7 +70,7 @@ public class AudioService {
 
         command.add(outputFile.toString());
         log.debug("Running audio command: {}", String.join(" ", command));
-        CommandUtility.executeCommand(command);
+        CommandUtility.executeCommand(command, options.getSubcommandTimeout());
 
         return outputFile;
     }

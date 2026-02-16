@@ -1,5 +1,6 @@
 package mp44u;
 
+import mp44u.errors.CommandTimeoutException;
 import mp44u.options.Mp44uOptions;
 import mp44u.services.AVInfoService;
 import mp44u.services.AudioService;
@@ -35,6 +36,9 @@ public class Mp44uCommand {
             initialize();
             audioService.convertOrCopyAudio(options);
             return 0;
+        } catch (CommandTimeoutException e) {
+            log.error("Audio command timed out", e);
+            return 124;
         } catch (Exception e) {
             log.error("Failed to generate m4a file", e);
             return 1;
@@ -48,6 +52,9 @@ public class Mp44uCommand {
             initialize();
             videoService.convertOrCopyVideo(options);
             return 0;
+        } catch (CommandTimeoutException e) {
+            log.error("Video command timed out", e);
+            return 124;
         } catch (Exception e) {
             log.error("Failed to generate mp4 file", e);
             return 1;

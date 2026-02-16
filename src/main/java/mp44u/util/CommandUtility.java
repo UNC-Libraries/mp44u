@@ -3,8 +3,10 @@ package mp44u.util;
 import static org.slf4j.LoggerFactory.getLogger;
 
 import mp44u.errors.CommandException;
+import mp44u.errors.CommandTimeoutException;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
+import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.exec.ExecuteWatchdog;
 import org.apache.commons.exec.PumpStreamHandler;
 import org.slf4j.Logger;
@@ -20,8 +22,6 @@ import java.util.List;
  */
 public class CommandUtility {
     private static final Logger log = getLogger(CommandUtility.class);
-    private static final int MAX_TIMEOUT_SECONDS = System.getProperty("mp44u.subcommand.timeout") != null ?
-            Integer.parseInt(System.getProperty("mp44u.subcommand.timeout")) : 60 * 5;
 
     private CommandUtility() {
     }
@@ -32,28 +32,39 @@ public class CommandUtility {
      * @return command output
      */
     public static String executeCommand(List<String> command) {
-        log.debug("Executing command with timeout {}s: {}", MAX_TIMEOUT_SECONDS, String.join(" ", command));
+        return executeCommand(command, -1);
+    }
+
+    public static String executeCommand(List<String> command, int maxTimeoutSeconds) {
+        log.debug("Executing command with timeout {}s: {}", maxTimeoutSeconds, String.join(" ", command));
         CommandLine cmdLine = CommandLine.parse(command.getFirst());
         cmdLine.addArguments(command.subList(1, command.size()).toArray(new String[0]));
 
         DefaultExecutor executor = DefaultExecutor.builder().get();
-        var watchdog = ExecuteWatchdog.builder()
-                                      .setTimeout(Duration.ofSeconds(MAX_TIMEOUT_SECONDS))
-                                      .get();
-        executor.setWatchdog(watchdog);
+        ExecuteWatchdog watchdog = null;
+        if (maxTimeoutSeconds > 0) {
+            watchdog = ExecuteWatchdog.builder()
+                                          .setTimeout(Duration.ofSeconds(maxTimeoutSeconds))
+                                          .get();
+            executor.setWatchdog(watchdog);
+        }
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         ByteArrayOutputStream errorStream = new ByteArrayOutputStream();
         executor.setStreamHandler(new PumpStreamHandler(outputStream, errorStream));
 
         try {
-            int exitValue = executor.execute(cmdLine);
-            log.error("Finished running command with exit code {}: {}", exitValue, String.join(" ", command));
-            if (watchdog.killedProcess()) {
-                log.warn("Command timed out after {}s: {}", MAX_TIMEOUT_SECONDS, String.join(" ", command));
-                throw new CommandException("Command timed out", command, outputStream.toString(), exitValue);
-            }
+            executor.execute(cmdLine);
             return outputStream.toString();
+        } catch (ExecuteException e) {
+            String output = outputStream.toString();
+            int exitValue = e.getExitValue();
+
+            if (watchdog != null && watchdog.killedProcess()) {
+                throw new CommandTimeoutException("Command timed out after " + maxTimeoutSeconds + " seconds",
+                        command, output);
+            }
+            throw new CommandException("Command failed to execute", command, output, exitValue, e);
         } catch (IOException e) {
             String output = outputStream + "\n" + errorStream;
             throw new CommandException("Command failed to execute", command, output, e);
