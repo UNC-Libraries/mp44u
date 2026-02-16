@@ -7,6 +7,10 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 
+/**
+ * Custom ExecuteWatchdog that escalates to SIGKILL if the process does not terminate after receiving SIGTERM
+ * @author bbpennel
+ */
 public class EscalatingExecuteWatchdog extends ExecuteWatchdog {
     private static final Logger log = LoggerFactory.getLogger(EscalatingExecuteWatchdog.class);
     private static final Duration ESCALATION_DELAY = Duration.ofSeconds(2);
@@ -29,7 +33,7 @@ public class EscalatingExecuteWatchdog extends ExecuteWatchdog {
 
     @Override
     public synchronized void timeoutOccured(final Watchdog w) {
-        // Call parent first to set killedProcess flag and do initial destroy()
+        // Call parent first to set killedProcess flag and do initial SIGTERM/destroy()
         super.timeoutOccured(w);
 
         if (monitoredProcess != null && monitoredProcess.isAlive()) {
@@ -48,8 +52,5 @@ public class EscalatingExecuteWatchdog extends ExecuteWatchdog {
                 monitoredProcess.destroyForcibly();
             }
         }
-
-        // Call parent to handle cleanup and set killedProcess flag
-        super.timeoutOccured(w);
     }
 }
