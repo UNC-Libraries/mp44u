@@ -1,5 +1,6 @@
 package mp44u.services;
 
+import mp44u.errors.CommandException;
 import mp44u.options.Mp44uOptions;
 import mp44u.util.CommandUtility;
 import org.slf4j.Logger;
@@ -42,7 +43,13 @@ public class AVInfoService {
 
         List<String> command = new ArrayList<>(Arrays.asList(ffprobe, v, quiet,
                 showEntries, entries, inputFile));
-        String ffprobeOutput = CommandUtility.executeCommand(command);
+        String ffprobeOutput = "";
+
+        try {
+            ffprobeOutput = CommandUtility.executeCommand(command);
+        } catch (CommandException e) {
+            log.warn("ffprobe command failed to execute for {}: {}", options.getInputPath(), command);
+        }
 
         // split ffprobe output by [/STREAM] and use the codec_type to determine if stream contains audio/video info
         Map<String,String> avInfo = new HashMap<>();
@@ -51,6 +58,11 @@ public class AVInfoService {
             ArrayList<String> streamInfo = (ArrayList<String>) Arrays.stream(stream.split(System.lineSeparator()))
                     .filter(str -> str.matches(".+=.*")).collect(Collectors.toList());
             if (streamInfo.contains("codec_type=video")) {
+                for (String streamValue : streamInfo) {
+                    avInfo.put("video_" + streamValue.split("=")[0], streamValue.split("=")[1]);
+                }
+            }
+            if (streamInfo.contains("codec_name=vc1")) {
                 for (String streamValue : streamInfo) {
                     avInfo.put("video_" + streamValue.split("=")[0], streamValue.split("=")[1]);
                 }
@@ -81,14 +93,15 @@ public class AVInfoService {
     }
 
     /**
-     * Determine if the file's video is encodable (has a non-zero bit_rate)
+     * Determine if the file's video is encodable (has a non-zero bit_rate, not vc1 video_codec_name)
      * @param avInfo
      * @return
      */
     public boolean videoEncodable(Map<String, String> avInfo) {
         boolean encodable = false;
 
-        if (avInfo.containsKey("video_bit_rate") && avInfo.get("video_bit_rate").matches("\\d+")) {
+        if ((avInfo.containsKey("video_bit_rate") && avInfo.get("video_bit_rate").matches("\\d+"))
+            && !avInfo.get("video_codec_name").matches("vc1")) {
             encodable = true;
         }
 

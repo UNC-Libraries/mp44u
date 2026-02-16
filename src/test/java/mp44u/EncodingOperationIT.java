@@ -51,6 +51,32 @@ public class EncodingOperationIT {
     }
 
     @Test
+    public void testGetVideoUnencodableMovNoFfprobeOutput() throws Exception {
+        Path testFile = Path.of("src/test/resources/IrvJoynerandScottHolme_h264_3000Kbps_720p.mov");
+        Mp44uOptions options = new Mp44uOptions();
+        options.setInputPath(testFile);
+
+        Map<String,String> avInfo = service.retrieveAudioVideoInfo(options);
+        boolean audioEncodable = service.audioEncodable(avInfo);
+        boolean videoEncodable = service.videoEncodable(avInfo);
+        assertFalse(audioEncodable);
+        assertFalse(videoEncodable);
+    }
+
+    @Test
+    public void testGetVideoUnencodableCodecType() throws Exception {
+        Path testFile = Path.of("src/test/resources/IrvJoynerandScottHolmes-fullMPEG2_WMV_3000Kbps_720p.wmv");
+        Mp44uOptions options = new Mp44uOptions();
+        options.setInputPath(testFile);
+
+        Map<String,String> avInfo = service.retrieveAudioVideoInfo(options);
+        boolean audioEncodable = service.audioEncodable(avInfo);
+        boolean videoEncodable = service.videoEncodable(avInfo);
+        assertTrue(audioEncodable);
+        assertFalse(videoEncodable);
+    }
+
+    @Test
     public void testGetVideoEncodableAudioUncodableMov() throws Exception {
         Path testFile = Path.of("src/test/resources/amen_noaudio.mov");
         Mp44uOptions options = new Mp44uOptions();
