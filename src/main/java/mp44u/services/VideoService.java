@@ -8,6 +8,7 @@ import mp44u.util.FileService;
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 
+import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
@@ -42,7 +43,6 @@ public class VideoService {
     /**
      * Encode or copy video file
      * @param options
-     * @return path to mp4 file
      */
     public void convertOrCopyVideo(Mp44uOptions options) throws Exception {
         if (Files.notExists(options.getInputPath())) {
@@ -58,7 +58,7 @@ public class VideoService {
         if (videoEncodable) {
             ffmpegEncodeToMp4(options, videoEncodingOperation, audioEncodingOperation, subtitles, audioEncodable);
         } else {
-            log.warn("{} not encodable, no video_bit_rate found", options.getInputPath());
+            throw new UnsupportedEncodingException(options.getInputPath() + " not encodable, no video_bit_rate found");
         }
 
     }
@@ -70,7 +70,7 @@ public class VideoService {
      */
     public Path ffmpegEncodeToMp4(Mp44uOptions options, EncodingOperation videoEncodingOperation,
                                   EncodingOperation audioEncodingOperation, Subtitles subtitles,
-                                  boolean audioEncodeable) throws Exception {
+                                  boolean audioEncodable) throws Exception {
         String inputFile = options.getInputPath().toString();
         String input = "-i";
         Path outputPath = options.getOutputPath();
@@ -97,7 +97,7 @@ public class VideoService {
         }
 
         // if audio exists, encode or copy audio
-        if (audioEncodeable) {
+        if (audioEncodable) {
             if (audioEncodingOperation.equals(EncodingOperation.ENCODE)) {
                 command.addAll(AudioService.ENCODE);
                 command.add(THREADS);

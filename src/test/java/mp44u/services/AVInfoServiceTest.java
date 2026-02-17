@@ -50,7 +50,7 @@ public class AVInfoServiceTest {
     }
 
     @Test
-    public void testGetAudioEncodeable() throws Exception {
+    public void testGetAudioNotEncodable() throws Exception {
         try (MockedStatic<CommandUtility> mockedStatic = Mockito.mockStatic(CommandUtility.class)) {
             Path mockedInput = testOutput.resolve("test_input.m4a");
             Mp44uOptions options = new Mp44uOptions();

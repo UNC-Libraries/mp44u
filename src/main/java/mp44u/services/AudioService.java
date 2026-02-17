@@ -7,6 +7,7 @@ import mp44u.util.FileService;
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 
+import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
@@ -36,9 +37,7 @@ public class AudioService {
 
     /**
      * Encode or copy audio file
-     *
      * @param options
-     * @return
      */
     public void convertOrCopyAudio(Mp44uOptions options) throws Exception {
         if (Files.notExists(options.getInputPath())) {
@@ -50,7 +49,7 @@ public class AudioService {
         if (avInfoService.audioEncodable(avInfo)) {
             ffmpegEncodeToM4a(options, audioEncodingOperation);
         } else {
-            log.warn("{} not encodable, no audio_bit_rate found", options.getInputPath());
+            throw new UnsupportedEncodingException(options.getInputPath() + " not encodable, no audio_bit_rate found");
         }
 
     }

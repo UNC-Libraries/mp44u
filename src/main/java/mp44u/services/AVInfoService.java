@@ -30,7 +30,7 @@ public class AVInfoService {
     /**
      * Run ffprobe and retrieve AV information for the input file
      * @param options
-     * @return
+     * @return avInfo
       */
     public Map<String,String> retrieveAudioVideoInfo(Mp44uOptions options) {
         // run ffprobe
@@ -48,7 +48,7 @@ public class AVInfoService {
         try {
             ffprobeOutput = CommandUtility.executeCommand(command, options.getSubcommandTimeout());
         } catch (CommandException e) {
-            log.warn("ffprobe command failed to execute for {}: {}", options.getInputPath(), command);
+            throw new CommandException("ffprobe command failed to execute", command, e.getOutput(), e.getExitCode());
         }
 
         // split ffprobe output by [/STREAM] and use the codec_type to determine if stream contains audio/video info
@@ -59,15 +59,10 @@ public class AVInfoService {
                     .filter(str -> str.matches(".+=.*")).collect(Collectors.toList());
             if (streamInfo.contains("codec_name=unknown")) {
                 for (String streamValue : streamInfo) {
-                    avInfo.put(streamValue.split("=")[0], streamValue.split("=")[1]);
+                    avInfo.put("unknown_" + streamValue.split("=")[0], streamValue.split("=")[1]);
                 }
             }
-            if (streamInfo.contains("codec_type=video")) {
-                for (String streamValue : streamInfo) {
-                    avInfo.put("video_" + streamValue.split("=")[0], streamValue.split("=")[1]);
-                }
-            }
-            if (streamInfo.contains("codec_name=vc1")) {
+            if (streamInfo.contains("codec_type=video") || streamInfo.contains("codec_name=vc1")) {
                 for (String streamValue : streamInfo) {
                     avInfo.put("video_" + streamValue.split("=")[0], streamValue.split("=")[1]);
                 }
@@ -91,7 +86,8 @@ public class AVInfoService {
         boolean encodable = false;
 
         if ((avInfo.containsKey("audio_bit_rate") && avInfo.get("audio_bit_rate").matches("\\d+"))
-                || (avInfo.containsKey("codec_name") && !avInfo.get("codec_name").matches("unknown"))) {
+                || (avInfo.containsKey("unknown_codec_name")
+                && !avInfo.get("unknown_codec_name").matches("unknown"))) {
             encodable = true;
         }
 
@@ -99,17 +95,18 @@ public class AVInfoService {
     }
 
     /**
-     * Determine if the file's video is encodable (has a non-zero bit_rate, not vc1 video_codec_name,
-     * no unknown codec_name)
+     * Determine if the file's video is encodable (has a non-zero bit_rate, has a known codec_name that isn't vc1)
      * @param avInfo
-     * @return
+     * @return boolean
      */
     public boolean videoEncodable(Map<String, String> avInfo) {
         boolean encodable = false;
 
-        if ((avInfo.containsKey("video_bit_rate") && avInfo.get("video_bit_rate").matches("\\d+"))
-                || (avInfo.containsKey("codec_name") && !avInfo.get("codec_name").matches("unknown"))) {
-            if (avInfo.containsKey("video_codec_name") && !avInfo.get("video_codec_name").matches("vc1")) {
+        if (avInfo.containsKey("video_bit_rate") && avInfo.get("video_bit_rate").matches("\\d+")) {
+            if ((avInfo.containsKey("unknown_codec_name")
+                    && !avInfo.get("unknown_codec_name").matches("unknown"))
+                || (avInfo.containsKey("video_codec_name")
+                    && !avInfo.get("video_codec_name").matches("vc1"))) {
                 encodable = true;
             }
         }
@@ -121,7 +118,7 @@ public class AVInfoService {
      * Use AUDIO_ENCODE if false and AUDIO_COPY if true for all audio streams in file
      * codec_name: aac AND bit_rate <= 192000 (i.e., 192kbps)
      * @param avInfo
-     * @return
+     * @return EncodingOperation
      */
     public EncodingOperation getAudioEncodingOperation(Map<String, String> avInfo) {
         EncodingOperation audioEncoding = EncodingOperation.ENCODE;
@@ -149,7 +146,7 @@ public class AVInfoService {
      * Use VIDEO_ENCODE if false and VIDEO_COPY if true for all video streams in file
      * codec_name: h264 AND height: <=720 AND bit_rate <= 3000000 (i.e., 3Mbps)
      * @param avInfo
-     * @return
+     * @return EncodingOperation
      */
     public EncodingOperation getVideoEncodingOperation(Map<String, String> avInfo) {
         EncodingOperation videoEncoding = EncodingOperation.ENCODE;
@@ -184,7 +181,7 @@ public class AVInfoService {
     /**
      * Check for subtiltes in video file
      * @param avInfo
-     * @return
+     * @return subtitles
      */
     public Subtitles getSubtitles(Map<String, String> avInfo) {
         Subtitles subtitles = Subtitles.NO_SUBTITLES;
