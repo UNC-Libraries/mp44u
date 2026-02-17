@@ -57,6 +57,11 @@ public class AVInfoService {
         for (String stream : streams) {
             ArrayList<String> streamInfo = (ArrayList<String>) Arrays.stream(stream.split(System.lineSeparator()))
                     .filter(str -> str.matches(".+=.*")).collect(Collectors.toList());
+            if (streamInfo.contains("codec_name=unknown")) {
+                for (String streamValue : streamInfo) {
+                    avInfo.put(streamValue.split("=")[0], streamValue.split("=")[1]);
+                }
+            }
             if (streamInfo.contains("codec_type=video")) {
                 for (String streamValue : streamInfo) {
                     avInfo.put("video_" + streamValue.split("=")[0], streamValue.split("=")[1]);
@@ -78,14 +83,15 @@ public class AVInfoService {
     }
 
     /**
-     * Determine if the file's audio is encodable (has a non-zero bit_rate)
+     * Determine if the file's audio is encodable (has a non-zero bit_rate, no unknown codec_name)
      * @param avInfo
      * @return
      */
     public boolean audioEncodable(Map<String, String> avInfo) {
         boolean encodable = false;
 
-        if (avInfo.containsKey("audio_bit_rate") && avInfo.get("audio_bit_rate").matches("\\d+")) {
+        if ((avInfo.containsKey("audio_bit_rate") && avInfo.get("audio_bit_rate").matches("\\d+"))
+                || (avInfo.containsKey("codec_name") && !avInfo.get("codec_name").matches("unknown"))) {
             encodable = true;
         }
 
@@ -93,15 +99,17 @@ public class AVInfoService {
     }
 
     /**
-     * Determine if the file's video is encodable (has a non-zero bit_rate, not vc1 video_codec_name)
+     * Determine if the file's video is encodable (has a non-zero bit_rate, not vc1 video_codec_name,
+     * no unknown codec_name)
      * @param avInfo
      * @return
      */
     public boolean videoEncodable(Map<String, String> avInfo) {
         boolean encodable = false;
 
-        if (avInfo.containsKey("video_bit_rate") && avInfo.get("video_bit_rate").matches("\\d+")) {
-            if (!avInfo.get("video_codec_name").matches("vc1")) {
+        if ((avInfo.containsKey("video_bit_rate") && avInfo.get("video_bit_rate").matches("\\d+"))
+                || (avInfo.containsKey("codec_name") && !avInfo.get("codec_name").matches("unknown"))) {
+            if (avInfo.containsKey("video_codec_name") && !avInfo.get("video_codec_name").matches("vc1")) {
                 encodable = true;
             }
         }

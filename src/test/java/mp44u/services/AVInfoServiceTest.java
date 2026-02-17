@@ -149,6 +149,43 @@ public class AVInfoServiceTest {
     }
 
     @Test
+    public void testGetVideoUnencodableUnknownCodecName() throws Exception {
+        try (MockedStatic<CommandUtility> mockedStatic = Mockito.mockStatic(CommandUtility.class)) {
+            Path mockedInput = testOutput.resolve("test_input.mp4");
+            Mp44uOptions options = new Mp44uOptions();
+            options.setInputPath(mockedInput);
+            mockedStatic.when(() -> CommandUtility.executeCommand(anyList())).thenReturn(
+                    "[STREAM]\n" +
+                            "index=0\n" +
+                            "codec_name=unknown\n" +
+                            "codec_type=video\n" +
+                            "height=480\n" +
+                            "bit_rate=n/a\n" +
+                            "TAG:language=eng\n" +
+                            "[/STREAM]\n" +
+                            "[STREAM]\n" +
+                            "index=1\n" +
+                            "codec_name=aac\n" +
+                            "codec_type=audio\n" +
+                            "bit_rate=120192\n" +
+                            "TAG:language=und\n" +
+                            "[/STREAM]\n");
+
+            AVInfoService avInfoService = new AVInfoService();
+            Map<String,String> avInfo = avInfoService.retrieveAudioVideoInfo(options);
+            boolean audioEncodable = avInfoService.audioEncodable(avInfo);
+            boolean videoEncodable = avInfoService.videoEncodable(avInfo);
+
+            mockedStatic.verify(() -> CommandUtility.executeCommand(
+                    new ArrayList<>(Arrays.asList("ffprobe", "-v", "quiet",
+                            "-show_entries", "stream=codec_type,codec_name,height,bit_rate,index:stream_tags=language",
+                            mockedInput.toString()))));
+            assertTrue(audioEncodable);
+            assertFalse(videoEncodable);
+        }
+    }
+
+    @Test
     public void testGetAudioEncodingOperation() throws Exception {
         try (MockedStatic<CommandUtility> mockedStatic = Mockito.mockStatic(CommandUtility.class)) {
             Path mockedInput = testOutput.resolve("test_input.m4a");

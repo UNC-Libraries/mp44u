@@ -51,7 +51,7 @@ public class EncodingOperationIT {
     }
 
     @Test
-    public void testGetVideoUnencodableMovNoFfprobeOutput() throws Exception {
+    public void testGetVideoUnencodableMovUnknownCodecNameNoBitRate() throws Exception {
         Path testFile = Path.of("src/test/resources/IrvJoynerandScottHolme_h264_3000Kbps_720p.mov");
         Mp44uOptions options = new Mp44uOptions();
         options.setInputPath(testFile);
