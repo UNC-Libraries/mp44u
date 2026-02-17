@@ -55,7 +55,7 @@ public class AVInfoServiceTest {
             Path mockedInput = testOutput.resolve("test_input.m4a");
             Mp44uOptions options = new Mp44uOptions();
             options.setInputPath(mockedInput);
-            mockedStatic.when(() -> CommandUtility.executeCommand(anyList())).thenReturn(
+            mockedStatic.when(() -> CommandUtility.executeCommand(anyList(), anyInt())).thenReturn(
                     "[STREAM]\n" +
                             "codec_name=aac\n" +
                             "codec_type=audio\n" +
@@ -80,7 +80,7 @@ public class AVInfoServiceTest {
             Path mockedInput = testOutput.resolve("test_input.mp4");
             Mp44uOptions options = new Mp44uOptions();
             options.setInputPath(mockedInput);
-            mockedStatic.when(() -> CommandUtility.executeCommand(anyList())).thenReturn(
+            mockedStatic.when(() -> CommandUtility.executeCommand(anyList(), anyInt())).thenReturn(
                     "[STREAM]\n" +
                             "index=0\n" +
                             "codec_name=h264\n" +
@@ -117,7 +117,7 @@ public class AVInfoServiceTest {
             Path mockedInput = testOutput.resolve("test_input.mp4");
             Mp44uOptions options = new Mp44uOptions();
             options.setInputPath(mockedInput);
-            mockedStatic.when(() -> CommandUtility.executeCommand(anyList())).thenReturn(
+            mockedStatic.when(() -> CommandUtility.executeCommand(anyList(), anyInt())).thenReturn(
                     "[STREAM]\n" +
                             "index=0\n" +
                             "codec_name=h264\n" +
@@ -154,7 +154,7 @@ public class AVInfoServiceTest {
             Path mockedInput = testOutput.resolve("test_input.mp4");
             Mp44uOptions options = new Mp44uOptions();
             options.setInputPath(mockedInput);
-            mockedStatic.when(() -> CommandUtility.executeCommand(anyList())).thenReturn(
+            mockedStatic.when(() -> CommandUtility.executeCommand(anyList(), anyInt())).thenReturn(
                     "[STREAM]\n" +
                             "index=0\n" +
                             "codec_name=unknown\n" +
