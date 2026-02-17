@@ -19,6 +19,7 @@ import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.MockitoAnnotations.openMocks;
 
@@ -54,7 +55,9 @@ public class VideoServiceTest {
             Mp44uOptions options = new Mp44uOptions();
             options.setInputPath(mockedInput);
             options.setOutputPath(testOutput.resolve("test_output"));
-            mockedStatic.when(() -> CommandUtility.executeCommand(anyList())).thenReturn(mockedOutput.toString());
+            options.setSubcommandTimeout(5);
+            mockedStatic.when(() -> CommandUtility.executeCommand(anyList(), anyInt()))
+                    .thenReturn(mockedOutput.toString());
 
             VideoService videoService = new VideoService();
             videoService.setAvInfoService(avInfoService);
@@ -62,14 +65,14 @@ public class VideoServiceTest {
                     Subtitles.SUBTITLES, true);
 
             mockedStatic.verify(() -> CommandUtility.executeCommand(
-                    new ArrayList<>(Arrays.asList("ffmpeg", "-i", mockedInput.toString(),
+                    Arrays.asList("ffmpeg", "-nostdin", "-nostats", "-i", mockedInput.toString(),
                             "-map_chapters", "-1", "-movflags", "faststart", "-c:s", "mov_text",
                             "-vcodec", "libx264", "-crf", "22",
                             "-vf", "yadif=0:-1:1,scale=trunc(oh*dar/2)*2:min(ih\\,720)",
                             "-force_key_frames", "expr:gte(t,n_forced*2)", "-maxrate", "2M", "-bufsize", "4M",
                             "-pix_fmt", "yuv420p", "-threads", "0",
-                            "-acodec", "aac", "-ab", "128k", "-ar", "44100", "-y", "-nostdin",
-                            "-dither_method", "triangular", "-threads", "0", mockedOutput.toString()))));
+                            "-acodec", "aac", "-ab", "128k", "-ar", "44100", "-y",
+                            "-dither_method", "triangular", "-threads", "0", mockedOutput.toString()), 5));
         }
     }
 
@@ -81,7 +84,9 @@ public class VideoServiceTest {
             Mp44uOptions options = new Mp44uOptions();
             options.setInputPath(mockedInput);
             options.setOutputPath(testOutput.resolve("test_output"));
-            mockedStatic.when(() -> CommandUtility.executeCommand(anyList())).thenReturn(mockedOutput.toString());
+            options.setSubcommandTimeout(5);
+            mockedStatic.when(() -> CommandUtility.executeCommand(anyList(), anyInt()))
+                    .thenReturn(mockedOutput.toString());
 
             VideoService videoService = new VideoService();
             videoService.setAvInfoService(avInfoService);
@@ -89,10 +94,10 @@ public class VideoServiceTest {
                     Subtitles.SUBTITLES, true);
 
             mockedStatic.verify(() -> CommandUtility.executeCommand(
-                    new ArrayList<>(Arrays.asList("ffmpeg", "-i", mockedInput.toString(),
+                    Arrays.asList("ffmpeg", "-nostdin", "-nostats", "-i", mockedInput.toString(),
                             "-map_chapters", "-1", "-movflags", "faststart", "-c:s", "mov_text", "-c:v", "copy",
-                            "-acodec", "aac", "-ab", "128k", "-ar", "44100", "-y", "-nostdin",
-                            "-dither_method", "triangular", "-threads", "0", mockedOutput.toString()))));
+                            "-acodec", "aac", "-ab", "128k", "-ar", "44100", "-y",
+                            "-dither_method", "triangular", "-threads", "0", mockedOutput.toString()), 5));
         }
     }
 

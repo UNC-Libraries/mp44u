@@ -46,7 +46,7 @@ public class AVInfoService {
         String ffprobeOutput = "";
 
         try {
-            ffprobeOutput = CommandUtility.executeCommand(command);
+            ffprobeOutput = CommandUtility.executeCommand(command, options.getSubcommandTimeout());
         } catch (CommandException e) {
             log.warn("ffprobe command failed to execute for {}: {}", options.getInputPath(), command);
         }
