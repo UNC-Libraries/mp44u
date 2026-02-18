@@ -85,10 +85,10 @@ public class AVInfoService {
     public boolean audioEncodable(Map<String, String> avInfo) {
         boolean encodable = false;
 
-        if ((avInfo.containsKey("audio_bit_rate") && avInfo.get("audio_bit_rate").matches("\\d+"))
-                || (avInfo.containsKey("unknown_codec_name")
-                && !avInfo.get("unknown_codec_name").matches("unknown"))) {
-            encodable = true;
+        if (avInfo.containsKey("audio_bit_rate") && avInfo.get("audio_bit_rate").matches("\\d+")) {
+            if (!avInfo.containsKey("unknown_codec_name")) {
+                encodable = true;
+            }
         }
 
         return encodable;
@@ -103,10 +103,8 @@ public class AVInfoService {
         boolean encodable = false;
 
         if (avInfo.containsKey("video_bit_rate") && avInfo.get("video_bit_rate").matches("\\d+")) {
-            if ((avInfo.containsKey("unknown_codec_name")
-                    && !avInfo.get("unknown_codec_name").matches("unknown"))
-                || (avInfo.containsKey("video_codec_name")
-                    && !avInfo.get("video_codec_name").matches("vc1"))) {
+            if (!avInfo.containsKey("unknown_codec_name") ||
+                (avInfo.containsKey("video_codec_name") && !avInfo.get("video_codec_name").matches("vc1"))) {
                 encodable = true;
             }
         }

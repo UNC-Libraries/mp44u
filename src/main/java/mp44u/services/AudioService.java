@@ -49,7 +49,8 @@ public class AudioService {
         if (avInfoService.audioEncodable(avInfo)) {
             ffmpegEncodeToM4a(options, audioEncodingOperation);
         } else {
-            throw new UnsupportedEncodingException(options.getInputPath() + " not encodable, no audio_bit_rate found");
+            throw new UnsupportedEncodingException(options.getInputPath() + " not encodable, " +
+                    "no audio_bit_rate found or unknown codec");
         }
 
     }

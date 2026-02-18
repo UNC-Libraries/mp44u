@@ -180,7 +180,7 @@ public class AVInfoServiceTest {
                     Arrays.asList("ffprobe", "-v", "quiet",
                             "-show_entries", "stream=codec_type,codec_name,height,bit_rate,index:stream_tags=language",
                             mockedInput.toString()), 0));
-            assertTrue(audioEncodable);
+            assertFalse(audioEncodable);
             assertFalse(videoEncodable);
         }
     }

@@ -58,7 +58,8 @@ public class VideoService {
         if (videoEncodable) {
             ffmpegEncodeToMp4(options, videoEncodingOperation, audioEncodingOperation, subtitles, audioEncodable);
         } else {
-            throw new UnsupportedEncodingException(options.getInputPath() + " not encodable, no video_bit_rate found");
+            throw new UnsupportedEncodingException(options.getInputPath() + " not encodable, " +
+                    "no video_bit_rate found or unknown codec");
         }
 
     }
