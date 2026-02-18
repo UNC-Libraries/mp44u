@@ -34,6 +34,9 @@ public class VideoService {
     public static final List<String> ENCODE = Arrays.asList("-vcodec", "libx264", "-crf", "22",
             "-vf", "yadif=0:-1:1,scale=trunc(oh*dar/2)*2:min(ih\\,720)",
             "-force_key_frames", "expr:gte(t,n_forced*2)", "-maxrate", "2M", "-bufsize", "4M", "-pix_fmt", "yuv420p");
+    public static final List<String> ENCODE_SWF = Arrays.asList("-vcodec", "libx264", "-crf", "22",
+            "-vf", "yadif=0:-1:1,scale=trunc(oh*dar/2)*2:trunc(min(ih\\,720)/2)*2",
+            "-force_key_frames", "expr:gte(t,n_forced*2)", "-maxrate", "2M", "-bufsize", "4M", "-pix_fmt", "yuv420p");
     public static final List<String> COPY = Arrays.asList("-c:v", "copy");
     public static final String SKIP_AUDIO = "-an";
     public static final String THREADS = "-threads";
@@ -49,17 +52,19 @@ public class VideoService {
             throw new NoSuchFileException(options.getInputPath().toString());
         }
         Map<String,String> avInfo = avInfoService.retrieveAudioVideoInfo(options);
-        EncodingOperation videoEncodingOperation = avInfoService.getVideoEncodingOperation(avInfo);
-        EncodingOperation audioEncodingOperation = avInfoService.getAudioEncodingOperation(avInfo);
-        Subtitles subtitles = avInfoService.getSubtitles(avInfo);
         boolean videoEncodable = avInfoService.videoEncodable(avInfo);
-        boolean audioEncodable = avInfoService.audioEncodable(avInfo);
 
         if (videoEncodable) {
-            ffmpegEncodeToMp4(options, videoEncodingOperation, audioEncodingOperation, subtitles, audioEncodable);
+            EncodingOperation videoEncodingOperation = avInfoService.getVideoEncodingOperation(avInfo);
+            EncodingOperation audioEncodingOperation = avInfoService.getAudioEncodingOperation(avInfo);
+            Subtitles subtitles = avInfoService.getSubtitles(avInfo);
+            boolean audioEncodable = avInfoService.audioEncodable(avInfo);
+            int numberChannels = Integer.parseInt(avInfo.get("audio_channels"));
+            ffmpegEncodeToMp4(options, videoEncodingOperation, audioEncodingOperation, subtitles,
+                    audioEncodable, numberChannels);
         } else {
-            throw new UnsupportedEncodingException(options.getInputPath() + " not encodable, " +
-                    "no video_bit_rate found or unknown codec");
+            throw new UnsupportedEncodingException(options.getInputPath() + " not encodable: "
+                + "unknown codec_name, unknown aspect_ratio, or codec_name=vc_1");
         }
 
     }
@@ -71,7 +76,7 @@ public class VideoService {
      */
     public Path ffmpegEncodeToMp4(Mp44uOptions options, EncodingOperation videoEncodingOperation,
                                   EncodingOperation audioEncodingOperation, Subtitles subtitles,
-                                  boolean audioEncodable) throws Exception {
+                                  boolean audioEncodable, int numberChannels) throws Exception {
         String inputFile = options.getInputPath().toString();
         String input = "-i";
         Path outputPath = options.getOutputPath();
@@ -83,6 +88,7 @@ public class VideoService {
         List<String> command = new ArrayList<>(Arrays.asList(FFMPEG, NO_STDIN, NO_STATS, input, inputFile));
         command.addAll(VIDEO);
 
+
         // get subtitles
         if (subtitles.equals(Subtitles.SUBTITLES)) {
             command.addAll(SUBTITLES);
@@ -90,7 +96,12 @@ public class VideoService {
 
         // encode or copy video
         if (videoEncodingOperation.equals(EncodingOperation.ENCODE)) {
-            command.addAll(ENCODE);
+            // use different encoder if SWF file
+            if (options.getSourceFormat().matches("application/x-shockwave-flash")) {
+                command.addAll(ENCODE_SWF);
+            } else{
+                command.addAll(ENCODE);
+            }
             command.add(THREADS);
             command.add(String.valueOf(options.getThreads()));
         } else {
@@ -105,6 +116,11 @@ public class VideoService {
                 command.add(String.valueOf(options.getThreads()));
             } else {
                 command.addAll(AudioService.COPY);
+            }
+
+            // for audio_channel = 1, add -ac 2 to prevent encoding error
+            if (numberChannels == 1) {
+                command.addAll(AudioService.CHANNELS);
             }
         } else {
             command.add(SKIP_AUDIO);

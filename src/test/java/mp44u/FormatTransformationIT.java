@@ -56,7 +56,7 @@ public class FormatTransformationIT {
         options.setInputPath(testFile);
         options.setOutputPath(testOutput.resolve("04007_G0010_2_2"));
 
-        Path outputFile = audioService.ffmpegEncodeToM4a(options, EncodingOperation.ENCODE);
+        Path outputFile = audioService.ffmpegEncodeToM4a(options, EncodingOperation.ENCODE, 2);
 
         assertTrue(Files.exists(outputFile));
         assertEquals(testOutput.resolve("04007_G0010_2_2.m4a"), outputFile);
@@ -69,7 +69,7 @@ public class FormatTransformationIT {
         options.setInputPath(testFile);
         options.setOutputPath(testOutput.resolve("04007_G0010_2_2_copy"));
 
-        Path outputFile = audioService.ffmpegEncodeToM4a(options, EncodingOperation.COPY);
+        Path outputFile = audioService.ffmpegEncodeToM4a(options, EncodingOperation.COPY, 2);
 
         assertTrue(Files.exists(outputFile));
         assertEquals(testOutput.resolve("04007_G0010_2_2_copy.m4a"), outputFile);
@@ -82,7 +82,7 @@ public class FormatTransformationIT {
         options.setInputPath(testFile);
         options.setOutputPath(testOutput.resolve("3AudioTrack"));
 
-        Path outputFile = audioService.ffmpegEncodeToM4a(options, EncodingOperation.ENCODE);
+        Path outputFile = audioService.ffmpegEncodeToM4a(options, EncodingOperation.ENCODE, 2);
 
         assertTrue(Files.exists(outputFile));
         assertEquals(testOutput.resolve("3AudioTrack.m4a"), outputFile);
@@ -95,7 +95,7 @@ public class FormatTransformationIT {
         options.setInputPath(testFile);
         options.setOutputPath(testOutput.resolve("b00310"));
 
-        Path outputFile = audioService.ffmpegEncodeToM4a(options, EncodingOperation.ENCODE);
+        Path outputFile = audioService.ffmpegEncodeToM4a(options, EncodingOperation.ENCODE, 1);
 
         assertTrue(Files.exists(outputFile));
         assertEquals(testOutput.resolve("b00310.m4a"), outputFile);
@@ -108,7 +108,7 @@ public class FormatTransformationIT {
         options.setInputPath(testFile);
         options.setOutputPath(testOutput.resolve("14"));
 
-        Path outputFile = audioService.ffmpegEncodeToM4a(options, EncodingOperation.ENCODE);
+        Path outputFile = audioService.ffmpegEncodeToM4a(options, EncodingOperation.ENCODE, 2);
 
         assertTrue(Files.exists(outputFile));
         assertEquals(testOutput.resolve("14.m4a"), outputFile);
@@ -121,7 +121,7 @@ public class FormatTransformationIT {
         options.setInputPath(testFile);
         options.setOutputPath(testOutput.resolve("DS400038"));
 
-        Path outputFile = audioService.ffmpegEncodeToM4a(options, EncodingOperation.ENCODE);
+        Path outputFile = audioService.ffmpegEncodeToM4a(options, EncodingOperation.ENCODE, 1);
 
         assertTrue(Files.exists(outputFile));
         assertEquals(testOutput.resolve("DS400038.m4a"), outputFile);
@@ -135,7 +135,7 @@ public class FormatTransformationIT {
         options.setOutputPath(testOutput.resolve("009_access"));
 
         Path outputFile = videoService.ffmpegEncodeToMp4(options, EncodingOperation.COPY, EncodingOperation.COPY,
-                AVInfoService.Subtitles.SUBTITLES, true);
+                AVInfoService.Subtitles.SUBTITLES, true, 2);
 
         assertTrue(Files.exists(outputFile));
         assertEquals(testOutput.resolve("009_access.mp4"), outputFile);
@@ -147,6 +147,7 @@ public class FormatTransformationIT {
         Mp44uOptions options = new Mp44uOptions();
         options.setInputPath(testFile);
         options.setOutputPath(testOutput.resolve("009_access"));
+        options.setSourceFormat("video/mp4");
 
         videoService.convertOrCopyVideo(options);
 
@@ -159,9 +160,10 @@ public class FormatTransformationIT {
         Mp44uOptions options = new Mp44uOptions();
         options.setInputPath(testFile);
         options.setOutputPath(testOutput.resolve("AMEN"));
+        options.setSourceFormat("video/quicktime");
 
         Path outputFile = videoService.ffmpegEncodeToMp4(options, EncodingOperation.ENCODE, EncodingOperation.ENCODE,
-                AVInfoService.Subtitles.SUBTITLES, true);
+                AVInfoService.Subtitles.SUBTITLES, true, 1);
 
         assertTrue(Files.exists(outputFile));
         assertEquals(testOutput.resolve("AMEN.mp4"), outputFile);
@@ -173,9 +175,10 @@ public class FormatTransformationIT {
         Mp44uOptions options = new Mp44uOptions();
         options.setInputPath(testFile);
         options.setOutputPath(testOutput.resolve("00288"));
+        options.setSourceFormat("video/m2ts");
 
         Path outputFile = videoService.ffmpegEncodeToMp4(options, EncodingOperation.ENCODE, EncodingOperation.ENCODE,
-                AVInfoService.Subtitles.SUBTITLES, true);
+                AVInfoService.Subtitles.SUBTITLES, true, 2);
 
         assertTrue(Files.exists(outputFile));
         assertEquals(testOutput.resolve("00288.mp4"), outputFile);

@@ -14,7 +14,6 @@ import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -61,7 +60,7 @@ public class AudioServiceTest {
 
             AudioService audioService = new AudioService();
             audioService.setAvInfoService(avInfoService);
-            audioService.ffmpegEncodeToM4a(options, EncodingOperation.ENCODE);
+            audioService.ffmpegEncodeToM4a(options, EncodingOperation.ENCODE, 2);
 
             mockedStatic.verify(() -> CommandUtility.executeCommand(
                     Arrays.asList("ffmpeg", "-nostdin", "-nostats", "-i", mockedInput.toString(),
@@ -83,7 +82,7 @@ public class AudioServiceTest {
 
             AudioService audioService = new AudioService();
             audioService.setAvInfoService(avInfoService);
-            audioService.ffmpegEncodeToM4a(options, EncodingOperation.COPY);
+            audioService.ffmpegEncodeToM4a(options, EncodingOperation.COPY, 2);
 
             mockedStatic.verify(() -> CommandUtility.executeCommand(
                     Arrays.asList("ffmpeg", "-nostdin", "-nostats", "-i", mockedInput.toString(),
@@ -100,7 +99,7 @@ public class AudioServiceTest {
         options.setOutputPath(testOutput.resolve("009"));
 
         var e = assertThrows(FileAlreadyExistsException.class, () -> {
-            service.ffmpegEncodeToM4a(options, EncodingOperation.ENCODE);
+            service.ffmpegEncodeToM4a(options, EncodingOperation.ENCODE, 2);
         });
         assertTrue(e.getMessage().contains("File already exists at "));
     }

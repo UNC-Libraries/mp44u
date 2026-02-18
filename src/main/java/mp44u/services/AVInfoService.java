@@ -10,6 +10,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static org.slf4j.LoggerFactory.getLogger;
@@ -39,7 +40,8 @@ public class AVInfoService {
         String v = "-v";
         String quiet = "quiet";
         String showEntries = "-show_entries";
-        String entries = "stream=codec_type,codec_name,height,bit_rate,index:stream_tags=language";
+        String entries = "stream=codec_type,codec_name,height,bit_rate," +
+                "sample_aspect_ratio,display_aspect_ratio,channels,channel_layout,index:stream_tags=language";
 
         List<String> command = new ArrayList<>(Arrays.asList(ffprobe, v, quiet,
                 showEntries, entries, inputFile));
@@ -51,8 +53,12 @@ public class AVInfoService {
             throw new CommandException("ffprobe command failed to execute", command, e.getOutput(), e.getExitCode());
         }
 
-        // split ffprobe output by [/STREAM] and use the codec_type to determine if stream contains audio/video info
         Map<String,String> avInfo = new HashMap<>();
+        // count total number of audio/video streams
+        long numberStreams = Pattern.compile("index=").matcher(ffprobeOutput).results().count();
+        avInfo.put("number_of_streams", String.valueOf(numberStreams));
+
+        // split ffprobe output by [/STREAM] and use the codec_type to determine if stream contains audio/video info
         ArrayList<String> streams = new ArrayList<>(Arrays.asList(ffprobeOutput.split("\\[\\/STREAM\\]")));
         for (String stream : streams) {
             ArrayList<String> streamInfo = (ArrayList<String>) Arrays.stream(stream.split(System.lineSeparator()))
@@ -78,15 +84,16 @@ public class AVInfoService {
     }
 
     /**
-     * Determine if the file's audio is encodable (has a non-zero bit_rate, no unknown codec_name)
+     * Determine if the file's audio is encodable (has a known codec_name)
      * @param avInfo
      * @return
      */
     public boolean audioEncodable(Map<String, String> avInfo) {
         boolean encodable = false;
 
-        if (avInfo.containsKey("audio_bit_rate") && avInfo.get("audio_bit_rate").matches("\\d+")) {
-            if (!avInfo.containsKey("unknown_codec_name")) {
+        if (avInfo.containsKey("audio_codec_type")) {
+            if (!avInfo.containsKey("unknown_codec_name") ||
+                (avInfo.containsKey("unknown_codec_name") && !avInfo.get("number_of_streams").matches("1"))) {
                 encodable = true;
             }
         }
@@ -95,16 +102,21 @@ public class AVInfoService {
     }
 
     /**
-     * Determine if the file's video is encodable (has a non-zero bit_rate, has a known codec_name that isn't vc1)
+     * Determine if the file's video is encodable (has a known codec_name that isn't vc1,
+     * known sample_aspect_ratio and display_aspect_ratio)
      * @param avInfo
      * @return boolean
      */
     public boolean videoEncodable(Map<String, String> avInfo) {
         boolean encodable = false;
 
-        if (avInfo.containsKey("video_bit_rate") && avInfo.get("video_bit_rate").matches("\\d+")) {
-            if (!avInfo.containsKey("unknown_codec_name") ||
-                (avInfo.containsKey("video_codec_name") && !avInfo.get("video_codec_name").matches("vc1"))) {
+        if ((avInfo.containsKey("video_sample_aspect_ratio")
+                && avInfo.get("video_sample_aspect_ratio").matches("\\d+:\\d+"))
+                && (avInfo.containsKey("video_display_aspect_ratio")
+                && avInfo.get("video_display_aspect_ratio").matches("\\d+:\\d+"))) {
+            if (!avInfo.containsKey("unknown_codec_name")
+                || (avInfo.containsKey("unknown_codec_name") && !avInfo.get("number_of_streams").matches("1"))
+                || (avInfo.containsKey("video_codec_name") && !avInfo.get("video_codec_name").matches("vc1"))) {
                 encodable = true;
             }
         }

@@ -31,6 +31,7 @@ public class AudioService {
     public static final List<String> ENCODE = Arrays.asList("-acodec", "aac", "-ab", "128k", "-ar", "44100",
             "-y", "-dither_method", "triangular");
     public static final List<String> COPY = Arrays.asList("-c:a", "copy");
+    public static final List<String> CHANNELS = Arrays.asList("-ac", "2");
     public static final String THREADS = "-threads";
 
     private AVInfoService avInfoService;
@@ -47,10 +48,10 @@ public class AudioService {
         EncodingOperation audioEncodingOperation = avInfoService.getAudioEncodingOperation(avInfo);
 
         if (avInfoService.audioEncodable(avInfo)) {
-            ffmpegEncodeToM4a(options, audioEncodingOperation);
+            int numberChannels = Integer.parseInt(avInfo.get("audio_channels"));
+            ffmpegEncodeToM4a(options, audioEncodingOperation, numberChannels);
         } else {
-            throw new UnsupportedEncodingException(options.getInputPath() + " not encodable, " +
-                    "no audio_bit_rate found or unknown codec");
+            throw new UnsupportedEncodingException(options.getInputPath() + " not encodable: unknown codec");
         }
 
     }
@@ -60,7 +61,8 @@ public class AudioService {
      * @param options
      * @return path to m4a file
      */
-    public Path ffmpegEncodeToM4a(Mp44uOptions options, EncodingOperation audioEncodingOperation) throws Exception {
+    public Path ffmpegEncodeToM4a(Mp44uOptions options, EncodingOperation audioEncodingOperation, int numberChannels)
+            throws Exception {
         String inputFile = options.getInputPath().toString();
         String input = "-i";
         Path outputPath = options.getOutputPath();
@@ -77,6 +79,11 @@ public class AudioService {
             command.add(String.valueOf(options.getThreads()));
         } else {
             command.addAll(COPY);
+        }
+
+        // for audio_channel = 1, add -ac 2 to prevent encoding error
+        if (numberChannels == 1) {
+            command.addAll(CHANNELS);
         }
 
         command.add(outputFile.toString());
