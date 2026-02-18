@@ -78,6 +78,36 @@ public class VideoServiceTest {
     }
 
     @Test
+    public void testVideoEncodeSwf() throws Exception {
+        try (MockedStatic<CommandUtility> mockedStatic = Mockito.mockStatic(CommandUtility.class)) {
+            Path mockedInput = testOutput.resolve("test_input.mp4");
+            Path mockedOutput = testOutput.resolve("test_output.mp4");
+            Mp44uOptions options = new Mp44uOptions();
+            options.setInputPath(mockedInput);
+            options.setOutputPath(testOutput.resolve("test_output"));
+            options.setSubcommandTimeout(5);
+            options.setSourceFormat("application/x-shockwave-flash");
+            mockedStatic.when(() -> CommandUtility.executeCommand(anyList(), anyInt()))
+                    .thenReturn(mockedOutput.toString());
+
+            VideoService videoService = new VideoService();
+            videoService.setAvInfoService(avInfoService);
+            videoService.ffmpegEncodeToMp4(options, EncodingOperation.ENCODE, EncodingOperation.ENCODE,
+                    Subtitles.SUBTITLES, true, 2);
+
+            mockedStatic.verify(() -> CommandUtility.executeCommand(
+                    Arrays.asList("ffmpeg", "-nostdin", "-nostats", "-i", mockedInput.toString(),
+                            "-map_chapters", "-1", "-movflags", "faststart", "-c:s", "mov_text",
+                            "-vcodec", "libx264", "-crf", "22",
+                            "-vf", "yadif=0:-1:1,scale=trunc(oh*dar/2)*2:trunc(min(ih\\,720)/2)*2",
+                            "-force_key_frames", "expr:gte(t,n_forced*2)", "-maxrate", "2M", "-bufsize", "4M",
+                            "-pix_fmt", "yuv420p", "-threads", "0",
+                            "-acodec", "aac", "-ab", "128k", "-ar", "44100", "-y",
+                            "-dither_method", "triangular", "-threads", "0", mockedOutput.toString()), 5));
+        }
+    }
+
+    @Test
     public void testVideoCopy() throws Exception {
         try (MockedStatic<CommandUtility> mockedStatic = Mockito.mockStatic(CommandUtility.class)) {
             Path mockedInput = testOutput.resolve("test_input.mp4");

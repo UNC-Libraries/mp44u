@@ -60,12 +60,13 @@ public class AudioServiceTest {
 
             AudioService audioService = new AudioService();
             audioService.setAvInfoService(avInfoService);
-            audioService.ffmpegEncodeToM4a(options, EncodingOperation.ENCODE, 2);
+            audioService.ffmpegEncodeToM4a(options, EncodingOperation.ENCODE, 1);
 
             mockedStatic.verify(() -> CommandUtility.executeCommand(
                     Arrays.asList("ffmpeg", "-nostdin", "-nostats", "-i", mockedInput.toString(),
                             "-acodec", "aac", "-ab", "128k", "-ar", "44100", "-y",
-                            "-dither_method", "triangular", "-threads", "0", mockedOutput.toString()), 5));
+                            "-dither_method", "triangular", "-threads", "0", "-ac", "2",
+                            mockedOutput.toString()), 5));
         }
     }
 
