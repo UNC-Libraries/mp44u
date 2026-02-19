@@ -44,9 +44,9 @@ public class AudioService {
             throw new NoSuchFileException(options.getInputPath().toString());
         }
         Map<String,String> avInfo = avInfoService.retrieveAudioVideoInfo(options);
-        EncodingOperation audioEncodingOperation = avInfoService.getAudioEncodingOperation(avInfo);
 
         if (avInfoService.audioEncodable(avInfo)) {
+            EncodingOperation audioEncodingOperation = avInfoService.getAudioEncodingOperation(avInfo);
             boolean monoAudio = avInfoService.monoAudio(avInfo);
             ffmpegEncodeToM4a(options, audioEncodingOperation, monoAudio);
         }
