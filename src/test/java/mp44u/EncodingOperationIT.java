@@ -32,8 +32,7 @@ public class EncodingOperationIT {
         options.setInputPath(testFile);
 
         Map<String,String> avInfo = service.retrieveAudioVideoInfo(options);
-        boolean audioEncodable = service.audioEncodable(avInfo);
-        assertTrue(audioEncodable);
+        service.audioEncodable(avInfo);
     }
 
     @Test
@@ -43,10 +42,8 @@ public class EncodingOperationIT {
         options.setInputPath(testFile);
 
         Map<String,String> avInfo = service.retrieveAudioVideoInfo(options);
-        boolean audioEncodable = service.audioEncodable(avInfo);
-        boolean videoEncodable = service.videoEncodable(avInfo);
-        assertTrue(audioEncodable);
-        assertTrue(videoEncodable);
+        service.audioEncodable(avInfo);
+        service.videoEncodable(avInfo);
     }
 
     @Test
@@ -75,8 +72,7 @@ public class EncodingOperationIT {
         options.setInputPath(testFile);
 
         Map<String,String> avInfo = service.retrieveAudioVideoInfo(options);
-        boolean audioEncodable = service.audioEncodable(avInfo);
-        assertTrue(audioEncodable);
+        service.audioEncodable(avInfo);
 
         var e = assertThrows(UnsupportedEncodingException.class, () -> {
             service.videoEncodable(avInfo);
@@ -91,8 +87,7 @@ public class EncodingOperationIT {
         options.setInputPath(testFile);
 
         Map<String,String> avInfo = service.retrieveAudioVideoInfo(options);
-        boolean videoEncodable = service.videoEncodable(avInfo);
-        assertTrue(videoEncodable);
+        service.videoEncodable(avInfo);
 
         var e = assertThrows(UnsupportedEncodingException.class, () -> {
             service.audioEncodable(avInfo);

@@ -45,11 +45,11 @@ public class AudioService {
         }
         Map<String,String> avInfo = avInfoService.retrieveAudioVideoInfo(options);
 
-        if (avInfoService.audioEncodable(avInfo)) {
-            EncodingOperation audioEncodingOperation = avInfoService.getAudioEncodingOperation(avInfo);
-            boolean monoAudio = avInfoService.monoAudio(avInfo);
-            ffmpegEncodeToM4a(options, audioEncodingOperation, monoAudio);
-        }
+        avInfoService.audioEncodable(avInfo);
+
+        EncodingOperation audioEncodingOperation = avInfoService.getAudioEncodingOperation(avInfo);
+        boolean monoAudio = avInfoService.monoAudio(avInfo);
+        ffmpegEncodeToM4a(options, audioEncodingOperation, monoAudio);
     }
 
     /**

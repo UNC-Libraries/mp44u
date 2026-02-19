@@ -48,17 +48,16 @@ public class VideoService {
             throw new NoSuchFileException(options.getInputPath().toString());
         }
         Map<String,String> avInfo = avInfoService.retrieveAudioVideoInfo(options);
-        boolean videoEncodable = avInfoService.videoEncodable(avInfo);
 
-        if (videoEncodable) {
-            EncodingOperation videoEncodingOperation = avInfoService.getVideoEncodingOperation(avInfo);
-            EncodingOperation audioEncodingOperation = avInfoService.getAudioEncodingOperation(avInfo);
-            Subtitles subtitles = avInfoService.getSubtitles(avInfo);
-            boolean audioEncodable = avInfoService.audioEncodable(avInfo);
-            boolean monoAudio = avInfoService.monoAudio(avInfo);
-            ffmpegEncodeToMp4(options, videoEncodingOperation, audioEncodingOperation, subtitles,
-                    audioEncodable, monoAudio);
-        }
+        avInfoService.videoEncodable(avInfo);
+
+        EncodingOperation videoEncodingOperation = avInfoService.getVideoEncodingOperation(avInfo);
+        EncodingOperation audioEncodingOperation = avInfoService.getAudioEncodingOperation(avInfo);
+        Subtitles subtitles = avInfoService.getSubtitles(avInfo);
+        avInfoService.audioEncodable(avInfo);
+        boolean containsAudio = avInfoService.containsAudio(avInfo);
+        boolean monoAudio = avInfoService.monoAudio(avInfo);
+        ffmpegEncodeToMp4(options, videoEncodingOperation, audioEncodingOperation, subtitles, containsAudio, monoAudio);
     }
 
     /**
@@ -68,7 +67,7 @@ public class VideoService {
      */
     public Path ffmpegEncodeToMp4(Mp44uOptions options, EncodingOperation videoEncodingOperation,
                                   EncodingOperation audioEncodingOperation, Subtitles subtitles,
-                                  boolean audioEncodable, boolean monoAudio) throws Exception {
+                                  boolean containsAudio, boolean monoAudio) throws Exception {
         String inputFile = options.getInputPath().toString();
         String input = "-i";
         Path outputPath = options.getOutputPath();
@@ -96,7 +95,7 @@ public class VideoService {
         }
 
         // if audio exists, encode or copy audio
-        if (audioEncodable) {
+        if (containsAudio) {
             if (audioEncodingOperation.equals(EncodingOperation.ENCODE)) {
                 command.addAll(AudioService.ENCODE);
                 command.add(THREADS);

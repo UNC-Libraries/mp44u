@@ -85,40 +85,28 @@ public class AVInfoService {
     /**
      * Determine if the file's audio is encodable (has a known codec_name)
      * @param avInfo
-     * @return
      */
-    public boolean audioEncodable(Map<String, String> avInfo) throws UnsupportedEncodingException {
-        boolean encodable;
-
-        if (avInfo.containsKey("audio_codec_type")) {
-            encodable = true;
-        } else {
+    public void audioEncodable(Map<String, String> avInfo) throws UnsupportedEncodingException {
+        if (!avInfo.containsKey("audio_codec_type")) {
             throw new UnsupportedEncodingException("Audio not encodable: unknown codec_name");
         }
-
-        return encodable;
     }
 
     /**
      * Determine if the file's video is encodable (has known codec_name, sample_aspect_ratio, and display_aspect_ratio)
      * @param avInfo
-     * @return boolean
      */
-    public boolean videoEncodable(Map<String, String> avInfo) throws UnsupportedEncodingException {
-        boolean encodable;
-
-        if (avInfo.containsKey("video_sample_aspect_ratio") && avInfo.containsKey("video_display_aspect_ratio")) {
-            if (avInfo.get("video_sample_aspect_ratio").matches("\\d+:\\d+")
-                    && avInfo.get("video_display_aspect_ratio").matches("\\d+:\\d+")) {
-                encodable = true;
-            } else {
+    public void videoEncodable(Map<String, String> avInfo) throws UnsupportedEncodingException {
+        if (avInfo.containsKey("video_codec_type")) {
+            if ((!avInfo.containsKey("video_sample_aspect_ratio")
+                || !avInfo.get("video_sample_aspect_ratio").matches("[1-9]\\d*:[1-9]\\d*"))
+                || (!avInfo.containsKey("video_display_aspect_ratio")
+                || !avInfo.get("video_display_aspect_ratio").matches("[1-9]\\d*:[1-9]\\d*"))) {
                 throw new UnsupportedEncodingException("Video not encodable: unknown aspect_ratio");
             }
         } else {
             throw new UnsupportedEncodingException("Video not encodable: unknown codec_name");
         }
-
-        return encodable;
     }
 
     /**
@@ -213,5 +201,20 @@ public class AVInfoService {
         }
 
         return monoAudio;
+    }
+
+    /**
+     * Check if video file contains audio stream
+     * @param avInfo
+     * @return subtitles
+     */
+    public boolean containsAudio(Map<String, String> avInfo) {
+        boolean containsAudio = false;
+
+        if (avInfo.containsKey("audio_codec_type")) {
+            containsAudio = true;
+        }
+
+        return containsAudio;
     }
 }
