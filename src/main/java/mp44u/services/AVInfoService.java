@@ -67,7 +67,7 @@ public class AVInfoService {
             if (streamInfo.contains("codec_name=unknown")) {
                 continue;
             }
-            if (streamInfo.contains("codec_type=video") || streamInfo.contains("codec_name=vc1")) {
+            if (streamInfo.contains("codec_type=video")) {
                 for (String streamValue : streamInfo) {
                     avInfo.put("video_" + streamValue.split("=")[0], streamValue.split("=")[1]);
                 }
