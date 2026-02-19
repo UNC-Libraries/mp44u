@@ -5,6 +5,7 @@ import mp44u.options.Mp44uOptions;
 import mp44u.util.CommandUtility;
 import org.slf4j.Logger;
 
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -64,9 +65,7 @@ public class AVInfoService {
             ArrayList<String> streamInfo = (ArrayList<String>) Arrays.stream(stream.split(System.lineSeparator()))
                     .filter(str -> str.matches(".+=.*")).collect(Collectors.toList());
             if (streamInfo.contains("codec_name=unknown")) {
-                for (String streamValue : streamInfo) {
-                    avInfo.put("unknown_" + streamValue.split("=")[0], streamValue.split("=")[1]);
-                }
+                continue;
             }
             if (streamInfo.contains("codec_type=video") || streamInfo.contains("codec_name=vc1")) {
                 for (String streamValue : streamInfo) {
@@ -88,37 +87,35 @@ public class AVInfoService {
      * @param avInfo
      * @return
      */
-    public boolean audioEncodable(Map<String, String> avInfo) {
-        boolean encodable = false;
+    public boolean audioEncodable(Map<String, String> avInfo) throws UnsupportedEncodingException {
+        boolean encodable;
 
         if (avInfo.containsKey("audio_codec_type")) {
-            if (!avInfo.containsKey("unknown_codec_name") ||
-                (avInfo.containsKey("unknown_codec_name") && !avInfo.get("number_of_streams").matches("1"))) {
-                encodable = true;
-            }
+            encodable = true;
+        } else {
+            throw new UnsupportedEncodingException("Audio not encodable: unknown codec_name");
         }
 
         return encodable;
     }
 
     /**
-     * Determine if the file's video is encodable (has a known codec_name that isn't vc1,
-     * known sample_aspect_ratio and display_aspect_ratio)
+     * Determine if the file's video is encodable (has known codec_name, sample_aspect_ratio, and display_aspect_ratio)
      * @param avInfo
      * @return boolean
      */
-    public boolean videoEncodable(Map<String, String> avInfo) {
-        boolean encodable = false;
+    public boolean videoEncodable(Map<String, String> avInfo) throws UnsupportedEncodingException {
+        boolean encodable;
 
-        if ((avInfo.containsKey("video_sample_aspect_ratio")
-                && avInfo.get("video_sample_aspect_ratio").matches("\\d+:\\d+"))
-                && (avInfo.containsKey("video_display_aspect_ratio")
-                && avInfo.get("video_display_aspect_ratio").matches("\\d+:\\d+"))) {
-            if (!avInfo.containsKey("unknown_codec_name")
-                || (avInfo.containsKey("unknown_codec_name") && !avInfo.get("number_of_streams").matches("1"))
-                || (avInfo.containsKey("video_codec_name") && !avInfo.get("video_codec_name").matches("vc1"))) {
+        if (avInfo.containsKey("video_sample_aspect_ratio") && avInfo.containsKey("video_display_aspect_ratio")) {
+            if (avInfo.get("video_sample_aspect_ratio").matches("\\d+:\\d+")
+                    && avInfo.get("video_display_aspect_ratio").matches("\\d+:\\d+")) {
                 encodable = true;
+            } else {
+                throw new UnsupportedEncodingException("Video not encodable: unknown aspect_ratio");
             }
+        } else {
+            throw new UnsupportedEncodingException("Video not encodable: unknown codec_name");
         }
 
         return encodable;
@@ -200,5 +197,21 @@ public class AVInfoService {
             subtitles = Subtitles.SUBTITLES;
         }
         return subtitles;
+    }
+
+    /**
+     * Check for one audio channel in audio file
+     * @param avInfo
+     * @return subtitles
+     */
+    public boolean monoAudio(Map<String, String> avInfo) {
+        boolean monoAudio = false;
+
+        if (avInfo.get("audio_channels").matches("1")
+                || avInfo.get("audio_channel_layout").matches("mono")) {
+            monoAudio = true;
+        }
+
+        return monoAudio;
     }
 }

@@ -60,7 +60,7 @@ public class AudioServiceTest {
 
             AudioService audioService = new AudioService();
             audioService.setAvInfoService(avInfoService);
-            audioService.ffmpegEncodeToM4a(options, EncodingOperation.ENCODE, 1);
+            audioService.ffmpegEncodeToM4a(options, EncodingOperation.ENCODE, true);
 
             mockedStatic.verify(() -> CommandUtility.executeCommand(
                     Arrays.asList("ffmpeg", "-nostdin", "-nostats", "-i", mockedInput.toString(),
@@ -83,7 +83,7 @@ public class AudioServiceTest {
 
             AudioService audioService = new AudioService();
             audioService.setAvInfoService(avInfoService);
-            audioService.ffmpegEncodeToM4a(options, EncodingOperation.COPY, 2);
+            audioService.ffmpegEncodeToM4a(options, EncodingOperation.COPY, false);
 
             mockedStatic.verify(() -> CommandUtility.executeCommand(
                     Arrays.asList("ffmpeg", "-nostdin", "-nostats", "-i", mockedInput.toString(),
@@ -100,7 +100,7 @@ public class AudioServiceTest {
         options.setOutputPath(testOutput.resolve("009"));
 
         var e = assertThrows(FileAlreadyExistsException.class, () -> {
-            service.ffmpegEncodeToM4a(options, EncodingOperation.ENCODE, 2);
+            service.ffmpegEncodeToM4a(options, EncodingOperation.ENCODE, false);
         });
         assertTrue(e.getMessage().contains("File already exists at "));
     }

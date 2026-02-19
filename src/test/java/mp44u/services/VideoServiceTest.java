@@ -14,7 +14,6 @@ import org.mockito.Mockito;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -63,13 +62,13 @@ public class VideoServiceTest {
             VideoService videoService = new VideoService();
             videoService.setAvInfoService(avInfoService);
             videoService.ffmpegEncodeToMp4(options, EncodingOperation.ENCODE, EncodingOperation.ENCODE,
-                    Subtitles.SUBTITLES, true, 2);
+                    Subtitles.SUBTITLES, true, false);
 
             mockedStatic.verify(() -> CommandUtility.executeCommand(
                     Arrays.asList("ffmpeg", "-nostdin", "-nostats", "-i", mockedInput.toString(),
                             "-map_chapters", "-1", "-movflags", "faststart", "-c:s", "mov_text",
                             "-vcodec", "libx264", "-crf", "22",
-                            "-vf", "yadif=0:-1:1,scale=trunc(oh*dar/2)*2:min(ih\\,720)",
+                            "-vf", "yadif=0:-1:1,scale=trunc(oh*dar/2)*2:trunc(min(ih\\,720)/2)*2",
                             "-force_key_frames", "expr:gte(t,n_forced*2)", "-maxrate", "2M", "-bufsize", "4M",
                             "-pix_fmt", "yuv420p", "-threads", "0",
                             "-acodec", "aac", "-ab", "128k", "-ar", "44100", "-y",
@@ -93,7 +92,7 @@ public class VideoServiceTest {
             VideoService videoService = new VideoService();
             videoService.setAvInfoService(avInfoService);
             videoService.ffmpegEncodeToMp4(options, EncodingOperation.ENCODE, EncodingOperation.ENCODE,
-                    Subtitles.SUBTITLES, true, 2);
+                    Subtitles.SUBTITLES, true, false);
 
             mockedStatic.verify(() -> CommandUtility.executeCommand(
                     Arrays.asList("ffmpeg", "-nostdin", "-nostats", "-i", mockedInput.toString(),
@@ -122,7 +121,7 @@ public class VideoServiceTest {
             VideoService videoService = new VideoService();
             videoService.setAvInfoService(avInfoService);
             videoService.ffmpegEncodeToMp4(options, EncodingOperation.COPY, EncodingOperation.ENCODE,
-                    Subtitles.SUBTITLES, true, 2);
+                    Subtitles.SUBTITLES, true, false);
 
             mockedStatic.verify(() -> CommandUtility.executeCommand(
                     Arrays.asList("ffmpeg", "-nostdin", "-nostats", "-i", mockedInput.toString(),
@@ -141,7 +140,7 @@ public class VideoServiceTest {
 
         var e = assertThrows(IllegalArgumentException.class, () -> {
             service.ffmpegEncodeToMp4(options, EncodingOperation.COPY, EncodingOperation.ENCODE,
-                Subtitles.SUBTITLES, true, 2);
+                Subtitles.SUBTITLES, true, false);
         });
         assertTrue(e.getMessage().contains("Input and output paths cannot be the same"));
     }

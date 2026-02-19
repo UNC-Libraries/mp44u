@@ -7,7 +7,6 @@ import mp44u.util.FileService;
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 
-import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
@@ -48,12 +47,9 @@ public class AudioService {
         EncodingOperation audioEncodingOperation = avInfoService.getAudioEncodingOperation(avInfo);
 
         if (avInfoService.audioEncodable(avInfo)) {
-            int numberChannels = Integer.parseInt(avInfo.get("audio_channels"));
-            ffmpegEncodeToM4a(options, audioEncodingOperation, numberChannels);
-        } else {
-            throw new UnsupportedEncodingException(options.getInputPath() + " not encodable: unknown codec");
+            boolean monoAudio = avInfoService.monoAudio(avInfo);
+            ffmpegEncodeToM4a(options, audioEncodingOperation, monoAudio);
         }
-
     }
 
     /**
@@ -61,7 +57,7 @@ public class AudioService {
      * @param options
      * @return path to m4a file
      */
-    public Path ffmpegEncodeToM4a(Mp44uOptions options, EncodingOperation audioEncodingOperation, int numberChannels)
+    public Path ffmpegEncodeToM4a(Mp44uOptions options, EncodingOperation audioEncodingOperation, boolean monoAudio)
             throws Exception {
         String inputFile = options.getInputPath().toString();
         String input = "-i";
@@ -77,13 +73,13 @@ public class AudioService {
             command.addAll(ENCODE);
             command.add(THREADS);
             command.add(String.valueOf(options.getThreads()));
+
+            // for audio_channel = 1, add -ac 2 to prevent encoding error
+            if (monoAudio) {
+                command.addAll(CHANNELS);
+            }
         } else {
             command.addAll(COPY);
-        }
-
-        // for audio_channel = 1, add -ac 2 to prevent encoding error
-        if (numberChannels == 1) {
-            command.addAll(CHANNELS);
         }
 
         command.add(outputFile.toString());

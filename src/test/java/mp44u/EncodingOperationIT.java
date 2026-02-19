@@ -8,12 +8,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 
+import java.io.UnsupportedEncodingException;
 import java.nio.file.Path;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.slf4j.LoggerFactory.getLogger;
 
 public class EncodingOperationIT {
@@ -51,16 +50,22 @@ public class EncodingOperationIT {
     }
 
     @Test
-    public void testGetVideoUnencodableMovUnknownCodecNameNoBitRate() throws Exception {
+    public void testGetVideoUnencodableMovUnknownCodecName() throws Exception {
         Path testFile = Path.of("src/test/resources/IrvJoynerandScottHolme_h264_3000Kbps_720p.mov");
         Mp44uOptions options = new Mp44uOptions();
         options.setInputPath(testFile);
 
         Map<String,String> avInfo = service.retrieveAudioVideoInfo(options);
-        boolean audioEncodable = service.audioEncodable(avInfo);
-        boolean videoEncodable = service.videoEncodable(avInfo);
-        assertFalse(audioEncodable);
-        assertFalse(videoEncodable);
+
+        var e = assertThrows(UnsupportedEncodingException.class, () -> {
+            service.audioEncodable(avInfo);
+        });
+        assertTrue(e.getMessage().contains("Audio not encodable: unknown codec_name"));
+
+        var e1 = assertThrows(UnsupportedEncodingException.class, () -> {
+            service.videoEncodable(avInfo);
+        });
+        assertTrue(e1.getMessage().contains("Video not encodable: unknown codec_name"));
     }
 
     @Test
@@ -71,9 +76,12 @@ public class EncodingOperationIT {
 
         Map<String,String> avInfo = service.retrieveAudioVideoInfo(options);
         boolean audioEncodable = service.audioEncodable(avInfo);
-        boolean videoEncodable = service.videoEncodable(avInfo);
         assertTrue(audioEncodable);
-        assertFalse(videoEncodable);
+
+        var e = assertThrows(UnsupportedEncodingException.class, () -> {
+            service.videoEncodable(avInfo);
+        });
+        assertTrue(e.getMessage().contains("Video not encodable: unknown aspect_ratio"));
     }
 
     @Test
@@ -83,10 +91,13 @@ public class EncodingOperationIT {
         options.setInputPath(testFile);
 
         Map<String,String> avInfo = service.retrieveAudioVideoInfo(options);
-        boolean audioEncodable = service.audioEncodable(avInfo);
         boolean videoEncodable = service.videoEncodable(avInfo);
-        assertFalse(audioEncodable);
         assertTrue(videoEncodable);
+
+        var e = assertThrows(UnsupportedEncodingException.class, () -> {
+            service.audioEncodable(avInfo);
+        });
+        assertTrue(e.getMessage().contains("Audio not encodable: unknown codec_name"));
     }
 
     @Test
