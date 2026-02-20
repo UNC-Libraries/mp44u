@@ -14,7 +14,6 @@ import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -61,12 +60,13 @@ public class AudioServiceTest {
 
             AudioService audioService = new AudioService();
             audioService.setAvInfoService(avInfoService);
-            audioService.ffmpegEncodeToM4a(options, EncodingOperation.ENCODE);
+            audioService.ffmpegEncodeToM4a(options, EncodingOperation.ENCODE, true);
 
             mockedStatic.verify(() -> CommandUtility.executeCommand(
                     Arrays.asList("ffmpeg", "-nostdin", "-nostats", "-i", mockedInput.toString(),
                             "-acodec", "aac", "-ab", "128k", "-ar", "44100", "-y",
-                            "-dither_method", "triangular", "-threads", "0", mockedOutput.toString()), 5));
+                            "-dither_method", "triangular", "-threads", "0", "-ac", "2",
+                            mockedOutput.toString()), 5));
         }
     }
 
@@ -83,7 +83,7 @@ public class AudioServiceTest {
 
             AudioService audioService = new AudioService();
             audioService.setAvInfoService(avInfoService);
-            audioService.ffmpegEncodeToM4a(options, EncodingOperation.COPY);
+            audioService.ffmpegEncodeToM4a(options, EncodingOperation.COPY, false);
 
             mockedStatic.verify(() -> CommandUtility.executeCommand(
                     Arrays.asList("ffmpeg", "-nostdin", "-nostats", "-i", mockedInput.toString(),
@@ -100,7 +100,7 @@ public class AudioServiceTest {
         options.setOutputPath(testOutput.resolve("009"));
 
         var e = assertThrows(FileAlreadyExistsException.class, () -> {
-            service.ffmpegEncodeToM4a(options, EncodingOperation.ENCODE);
+            service.ffmpegEncodeToM4a(options, EncodingOperation.ENCODE, false);
         });
         assertTrue(e.getMessage().contains("File already exists at "));
     }

@@ -8,6 +8,8 @@ import mp44u.util.FileService;
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -29,9 +31,10 @@ public class VideoService {
     public static final List<String> VIDEO = Arrays.asList("-map_chapters", "-1", "-movflags", "faststart");
     public static final List<String> SUBTITLES = Arrays.asList("-c:s", "mov_text");
     public static final List<String> ENCODE = Arrays.asList("-vcodec", "libx264", "-crf", "22",
-            "-vf", "yadif=0:-1:1,scale=trunc(oh*dar/2)*2:min(ih\\,720)",
+            "-vf", "yadif=0:-1:1,scale=trunc(oh*dar/2)*2:trunc(min(ih\\,720)/2)*2",
             "-force_key_frames", "expr:gte(t,n_forced*2)", "-maxrate", "2M", "-bufsize", "4M", "-pix_fmt", "yuv420p");
     public static final List<String> COPY = Arrays.asList("-c:v", "copy");
+    public static final String SKIP_AUDIO = "-an";
     public static final String THREADS = "-threads";
 
     private AVInfoService avInfoService;
@@ -39,15 +42,22 @@ public class VideoService {
     /**
      * Encode or copy video file
      * @param options
-     * @return path to mp4 file
      */
-    public Path convertOrCopyVideo(Mp44uOptions options) throws Exception {
+    public void convertOrCopyVideo(Mp44uOptions options) throws Exception {
+        if (Files.notExists(options.getInputPath())) {
+            throw new NoSuchFileException(options.getInputPath().toString());
+        }
         Map<String,String> avInfo = avInfoService.retrieveAudioVideoInfo(options);
+
+        avInfoService.videoEncodable(avInfo);
+
         EncodingOperation videoEncodingOperation = avInfoService.getVideoEncodingOperation(avInfo);
         EncodingOperation audioEncodingOperation = avInfoService.getAudioEncodingOperation(avInfo);
         Subtitles subtitles = avInfoService.getSubtitles(avInfo);
-
-        return ffmpegEncodeToMp4(options, videoEncodingOperation, audioEncodingOperation, subtitles);
+        avInfoService.audioEncodable(avInfo);
+        boolean containsAudio = avInfoService.containsAudio(avInfo);
+        boolean monoAudio = avInfoService.monoAudio(avInfo);
+        ffmpegEncodeToMp4(options, videoEncodingOperation, audioEncodingOperation, subtitles, containsAudio, monoAudio);
     }
 
     /**
@@ -56,7 +66,8 @@ public class VideoService {
      * @return path to mp4 file
      */
     public Path ffmpegEncodeToMp4(Mp44uOptions options, EncodingOperation videoEncodingOperation,
-                                  EncodingOperation audioEncodingOperation, Subtitles subtitles) throws Exception {
+                                  EncodingOperation audioEncodingOperation, Subtitles subtitles,
+                                  boolean containsAudio, boolean monoAudio) throws Exception {
         String inputFile = options.getInputPath().toString();
         String input = "-i";
         Path outputPath = options.getOutputPath();
@@ -67,6 +78,7 @@ public class VideoService {
 
         List<String> command = new ArrayList<>(Arrays.asList(FFMPEG, NO_STDIN, NO_STATS, input, inputFile));
         command.addAll(VIDEO);
+
 
         // get subtitles
         if (subtitles.equals(Subtitles.SUBTITLES)) {
@@ -82,13 +94,22 @@ public class VideoService {
             command.addAll(COPY);
         }
 
-        // encode or copy audio
-        if (audioEncodingOperation.equals(EncodingOperation.ENCODE)) {
-            command.addAll(AudioService.ENCODE);
-            command.add(THREADS);
-            command.add(String.valueOf(options.getThreads()));
+        // if audio exists, encode or copy audio
+        if (containsAudio) {
+            if (audioEncodingOperation.equals(EncodingOperation.ENCODE)) {
+                command.addAll(AudioService.ENCODE);
+                command.add(THREADS);
+                command.add(String.valueOf(options.getThreads()));
+
+                // for audio_channel = 1, add -ac 2 to prevent encoding error
+                if (monoAudio) {
+                    command.addAll(AudioService.CHANNELS);
+                }
+            } else {
+                command.addAll(AudioService.COPY);
+            }
         } else {
-            command.addAll(AudioService.COPY);
+            command.add(SKIP_AUDIO);
         }
 
         command.add(outputFile.toString());

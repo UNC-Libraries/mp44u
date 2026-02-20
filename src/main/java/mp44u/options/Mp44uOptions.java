@@ -18,10 +18,16 @@ public class Mp44uOptions {
             description = "Number of threads used for encoding",
             defaultValue = "0")
     private int threads;
+
     @Option(names = {"-T", "--timeout"},
             description = "Timeout in seconds for subcommands (default: ${DEFAULT-VALUE})",
             defaultValue = "${sys:mp44u.subcommand.timeout:-300}")
     private int subcommandTimeout;
+
+    @Option(names = {"-sf", "--source-fmt"},
+            description = "Override source file type detection.",
+            defaultValue = "")
+    private String sourceFormat;
 
     public Path getInputPath() {
         return inputPath;
@@ -53,5 +59,13 @@ public class Mp44uOptions {
 
     public void setSubcommandTimeout(int subcommandTimeout) {
         this.subcommandTimeout = subcommandTimeout;
+    }
+
+    public String getSourceFormat() {
+        return sourceFormat;
+    }
+
+    public void setSourceFormat(String sourceFormat) {
+        this.sourceFormat = sourceFormat;
     }
 }

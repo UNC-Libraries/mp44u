@@ -7,6 +7,8 @@ import mp44u.util.FileService;
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,6 +30,7 @@ public class AudioService {
     public static final List<String> ENCODE = Arrays.asList("-acodec", "aac", "-ab", "128k", "-ar", "44100",
             "-y", "-dither_method", "triangular");
     public static final List<String> COPY = Arrays.asList("-c:a", "copy");
+    public static final List<String> CHANNELS = Arrays.asList("-ac", "2");
     public static final String THREADS = "-threads";
 
     private AVInfoService avInfoService;
@@ -35,13 +38,18 @@ public class AudioService {
     /**
      * Encode or copy audio file
      * @param options
-     * @return path to m4a file
      */
-    public Path convertOrCopyAudio(Mp44uOptions options) throws Exception {
+    public void convertOrCopyAudio(Mp44uOptions options) throws Exception {
+        if (Files.notExists(options.getInputPath())) {
+            throw new NoSuchFileException(options.getInputPath().toString());
+        }
         Map<String,String> avInfo = avInfoService.retrieveAudioVideoInfo(options);
-        EncodingOperation audioEncodingOperation = avInfoService.getAudioEncodingOperation(avInfo);
 
-        return ffmpegEncodeToM4a(options, audioEncodingOperation);
+        avInfoService.audioEncodable(avInfo);
+
+        EncodingOperation audioEncodingOperation = avInfoService.getAudioEncodingOperation(avInfo);
+        boolean monoAudio = avInfoService.monoAudio(avInfo);
+        ffmpegEncodeToM4a(options, audioEncodingOperation, monoAudio);
     }
 
     /**
@@ -49,7 +57,8 @@ public class AudioService {
      * @param options
      * @return path to m4a file
      */
-    public Path ffmpegEncodeToM4a(Mp44uOptions options, EncodingOperation audioEncodingOperation) throws Exception {
+    public Path ffmpegEncodeToM4a(Mp44uOptions options, EncodingOperation audioEncodingOperation, boolean monoAudio)
+            throws Exception {
         String inputFile = options.getInputPath().toString();
         String input = "-i";
         Path outputPath = options.getOutputPath();
@@ -64,6 +73,11 @@ public class AudioService {
             command.addAll(ENCODE);
             command.add(THREADS);
             command.add(String.valueOf(options.getThreads()));
+
+            // for audio_channel = 1, add -ac 2 to prevent encoding error
+            if (monoAudio) {
+                command.addAll(CHANNELS);
+            }
         } else {
             command.addAll(COPY);
         }

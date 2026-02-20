@@ -13,14 +13,14 @@ import org.mockito.Mockito;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.MockitoAnnotations.openMocks;
@@ -49,6 +49,173 @@ public class AVInfoServiceTest {
     }
 
     @Test
+    public void testGetAudioNotEncodable() throws Exception {
+        try (MockedStatic<CommandUtility> mockedStatic = Mockito.mockStatic(CommandUtility.class)) {
+            Path mockedInput = testOutput.resolve("test_input.m4a");
+            Mp44uOptions options = new Mp44uOptions();
+            options.setInputPath(mockedInput);
+            mockedStatic.when(() -> CommandUtility.executeCommand(anyList(), anyInt())).thenReturn(
+                    "[STREAM]\n" +
+                        "index=0\n" +
+                        "codec_name=unknown\n" +
+                        "codec_type=audio\n" +
+                        "channels=0\n" +
+                        "channel_layout=unknown\n" +
+                        "bit_rate=N/A\n" +
+                        "TAG:language=eng\n" +
+                        "[/STREAM]");
+
+            AVInfoService avInfoService = new AVInfoService();
+            Map<String,String> avInfo = avInfoService.retrieveAudioVideoInfo(options);
+
+            mockedStatic.verify(() -> CommandUtility.executeCommand(
+                    Arrays.asList("ffprobe", "-v", "quiet",
+                            "-show_entries", "stream=codec_type,codec_name,height,bit_rate,sample_aspect_ratio," +
+                            "display_aspect_ratio,channels,channel_layout,index:stream_tags=language",
+                            mockedInput.toString()), 0));
+
+            var e = assertThrows(UnsupportedEncodingException.class, () -> {
+                avInfoService.audioEncodable(avInfo);
+            });
+            assertTrue(e.getMessage().contains("Audio not encodable: unknown codec_name"));
+        }
+    }
+
+    @Test
+    public void testGetAudioVideoEncodable() throws Exception {
+        try (MockedStatic<CommandUtility> mockedStatic = Mockito.mockStatic(CommandUtility.class)) {
+            Path mockedInput = testOutput.resolve("test_input.mp4");
+            Mp44uOptions options = new Mp44uOptions();
+            options.setInputPath(mockedInput);
+            options.setSourceFormat("video/mp4");
+            mockedStatic.when(() -> CommandUtility.executeCommand(anyList(), anyInt())).thenReturn(
+                    "[STREAM]\n" +
+                        "index=0\n" +
+                        "codec_name=h264\n" +
+                        "codec_type=video\n" +
+                        "height=480\n" +
+                        "sample_aspect_ratio=8:9\n" +
+                        "display_aspect_ratio=4:3\n" +
+                        "bit_rate=923373\n" +
+                        "TAG:language=eng\n" +
+                        "[/STREAM]\n" +
+                        "[STREAM]\n" +
+                        "index=1\n" +
+                        "codec_name=aac\n" +
+                        "codec_type=audio\n" +
+                        "channels=2\n" +
+                        "channel_layout=stereo\n" +
+                        "bit_rate=120192\n" +
+                        "TAG:language=und\n" +
+                        "[/STREAM]\n");
+
+            AVInfoService avInfoService = new AVInfoService();
+            Map<String,String> avInfo = avInfoService.retrieveAudioVideoInfo(options);
+            avInfoService.audioEncodable(avInfo);
+            avInfoService.videoEncodable(avInfo);
+
+            mockedStatic.verify(() -> CommandUtility.executeCommand(
+                    Arrays.asList("ffprobe", "-v", "quiet",
+                            "-show_entries", "stream=codec_type,codec_name,height,bit_rate,sample_aspect_ratio," +
+                            "display_aspect_ratio,channels,channel_layout,index:stream_tags=language",
+                            mockedInput.toString()), 0));
+        }
+    }
+
+    @Test
+    public void testGetVideoNotEncodable() throws Exception {
+        try (MockedStatic<CommandUtility> mockedStatic = Mockito.mockStatic(CommandUtility.class)) {
+            Path mockedInput = testOutput.resolve("test_input.mp4");
+            Mp44uOptions options = new Mp44uOptions();
+            options.setInputPath(mockedInput);
+            mockedStatic.when(() -> CommandUtility.executeCommand(anyList(), anyInt())).thenReturn(
+                    "[STREAM]\n" +
+                        "index=0\n" +
+                        "codec_name=wmapro\n" +
+                        "codec_type=audio\n" +
+                        "channels=2\n" +
+                        "channel_layout=stereo\n" +
+                        "bit_rate=160040\n" +
+                        "[/STREAM]\n" +
+                        "[STREAM]\n" +
+                        "index=1\n" +
+                        "codec_name=unknown\n" +
+                        "codec_type=video\n" +
+                        "height=720\n" +
+                        "sample_aspect_ratio=N/A\n" +
+                        "display_aspect_ratio=N/A\n" +
+                        "bit_rate=2800000\n" +
+                        "[/STREAM]\n");
+
+            AVInfoService avInfoService = new AVInfoService();
+            Map<String,String> avInfo = avInfoService.retrieveAudioVideoInfo(options);
+            avInfoService.audioEncodable(avInfo);
+
+            mockedStatic.verify(() -> CommandUtility.executeCommand(
+                    Arrays.asList("ffprobe", "-v", "quiet",
+                            "-show_entries", "stream=codec_type,codec_name,height,bit_rate,sample_aspect_ratio," +
+                            "display_aspect_ratio,channels,channel_layout,index:stream_tags=language",
+                            mockedInput.toString()), 0));
+
+            var e = assertThrows(UnsupportedEncodingException.class, () -> {
+                avInfoService.videoEncodable(avInfo);
+            });
+            assertTrue(e.getMessage().contains("Video not encodable: unknown codec_name"));
+        }
+    }
+
+    @Test
+    public void testGetVideoUnencodableUnknownAspectRatios() throws Exception {
+        try (MockedStatic<CommandUtility> mockedStatic = Mockito.mockStatic(CommandUtility.class)) {
+            Path mockedInput = testOutput.resolve("test_input.mp4");
+            Mp44uOptions options = new Mp44uOptions();
+            options.setInputPath(mockedInput);
+            mockedStatic.when(() -> CommandUtility.executeCommand(anyList(), anyInt())).thenReturn(
+                    "[STREAM]\n" +
+                    "index=0\n" +
+                    "codec_name=dvvideo\n" +
+                    "codec_type=video\n" +
+                    "height=480\n" +
+                    "sample_aspect_ratio=N/A\n" +
+                    "display_aspect_ratio=N/A\n" +
+                    "bit_rate=28771200\n" +
+                    "TAG:language=eng\n" +
+                    "[/STREAM]\n" +
+                    "[STREAM]\n" +
+                    "index=1\n" +
+                    "codec_name=pcm_s16le\n" +
+                    "codec_type=audio\n" +
+                    "channels=2\n" +
+                    "channel_layout=unknown\n" +
+                    "bit_rate=28771229\n" +
+                    "TAG:language=eng\n" +
+                    "[/STREAM]\n" +
+                    "[STREAM]\n" +
+                    "index=2\n" +
+                    "codec_name=unknown\n" +
+                    "codec_type=data\n" +
+                    "bit_rate=2\n" +
+                    "TAG:language=eng\n" +
+                    "[/STREAM]");
+
+            AVInfoService avInfoService = new AVInfoService();
+            Map<String,String> avInfo = avInfoService.retrieveAudioVideoInfo(options);
+            avInfoService.audioEncodable(avInfo);
+
+            mockedStatic.verify(() -> CommandUtility.executeCommand(
+                    Arrays.asList("ffprobe", "-v", "quiet",
+                            "-show_entries", "stream=codec_type,codec_name,height,bit_rate,sample_aspect_ratio," +
+                            "display_aspect_ratio,channels,channel_layout,index:stream_tags=language",
+                            mockedInput.toString()), 0));
+
+            var e = assertThrows(UnsupportedEncodingException.class, () -> {
+                avInfoService.videoEncodable(avInfo);
+            });
+            assertTrue(e.getMessage().contains("Video not encodable: unknown aspect_ratio"));
+        }
+    }
+
+    @Test
     public void testGetAudioEncodingOperation() throws Exception {
         try (MockedStatic<CommandUtility> mockedStatic = Mockito.mockStatic(CommandUtility.class)) {
             Path mockedInput = testOutput.resolve("test_input.m4a");
@@ -56,10 +223,14 @@ public class AVInfoServiceTest {
             options.setInputPath(mockedInput);
             mockedStatic.when(() -> CommandUtility.executeCommand(anyList(), anyInt())).thenReturn(
                     "[STREAM]\n" +
+                    "index=0\n" +
                     "codec_name=aac\n" +
                     "codec_type=audio\n" +
+                    "channels=2\n" +
+                    "channel_layout=stereo\n" +
                     "bit_rate=128000\n" +
-                    "[/STREAM]");
+                    "TAG:language=und\n" +
+                    "[/STREAM]\n");
 
             AVInfoService avInfoService = new AVInfoService();
             Map<String,String> avInfo = avInfoService.retrieveAudioVideoInfo(options);
@@ -67,7 +238,8 @@ public class AVInfoServiceTest {
 
             mockedStatic.verify(() -> CommandUtility.executeCommand(
                     Arrays.asList("ffprobe", "-v", "quiet",
-                            "-show_entries", "stream=codec_type,codec_name,height,bit_rate,index:stream_tags=language",
+                            "-show_entries", "stream=codec_type,codec_name,height,bit_rate,sample_aspect_ratio," +
+                            "display_aspect_ratio,channels,channel_layout,index:stream_tags=language",
                             mockedInput.toString()), 0));
             assertEquals(EncodingOperation.COPY, encodeOrCopy);
         }
@@ -85,13 +257,17 @@ public class AVInfoServiceTest {
                     "codec_name=h264\n" +
                     "codec_type=video\n" +
                     "height=480\n" +
+                    "sample_aspect_ratio=8:9\n" +
+                    "display_aspect_ratio=4:3\n" +
                     "bit_rate=923373\n" +
-                    "TAG:language=eng\n" +
+                    "TAG:language=und\n" +
                     "[/STREAM]\n" +
                     "[STREAM]\n" +
                     "index=1\n" +
                     "codec_name=aac\n" +
                     "codec_type=audio\n" +
+                    "channels=2\n" +
+                    "channel_layout=stereo\n" +
                     "bit_rate=120192\n" +
                     "TAG:language=und\n" +
                     "[/STREAM]\n");
@@ -102,7 +278,8 @@ public class AVInfoServiceTest {
 
             mockedStatic.verify(() -> CommandUtility.executeCommand(
                     Arrays.asList("ffprobe", "-v", "quiet",
-                            "-show_entries", "stream=codec_type,codec_name,height,bit_rate,index:stream_tags=language",
+                            "-show_entries", "stream=codec_type,codec_name,height,bit_rate,sample_aspect_ratio," +
+                            "display_aspect_ratio,channels,channel_layout,index:stream_tags=language",
                             mockedInput.toString()), 0));
             assertEquals(EncodingOperation.COPY, encodeOrCopy);
         }
@@ -116,20 +293,24 @@ public class AVInfoServiceTest {
             options.setInputPath(mockedInput);
             mockedStatic.when(() -> CommandUtility.executeCommand(anyList(), anyInt())).thenReturn(
                     "[STREAM]\n" +
-                            "index=0\n" +
-                            "codec_name=aac\n" +
-                            "codec_type=audio\n" +
-                            "bit_rate=120192\n" +
-                            "TAG:language=und\n" +
-                            "[/STREAM]\n" +
-                            "[STREAM]\n" +
-                            "index=1\n" +
-                            "codec_name=h264\n" +
-                            "codec_type=video\n" +
-                            "height=480\n" +
-                            "bit_rate=923373\n" +
-                            "TAG:language=eng\n" +
-                            "[/STREAM]\n");
+                    "index=0\n" +
+                    "codec_name=aac\n" +
+                    "codec_type=audio\n" +
+                    "channels=2\n" +
+                    "channel_layout=stereo\n" +
+                    "bit_rate=120192\n" +
+                    "TAG:language=und\n" +
+                    "[/STREAM]\n" +
+                    "[STREAM]\n" +
+                    "index=1\n" +
+                    "codec_name=h264\n" +
+                    "codec_type=video\n" +
+                    "height=480\n" +
+                    "sample_aspect_ratio=8:9\n" +
+                    "display_aspect_ratio=4:3\n" +
+                    "bit_rate=923373\n" +
+                    "TAG:language=und\n" +
+                    "[/STREAM]\n");
 
             AVInfoService avInfoService = new AVInfoService();
             Map<String,String> avInfo = avInfoService.retrieveAudioVideoInfo(options);
@@ -137,7 +318,8 @@ public class AVInfoServiceTest {
 
             mockedStatic.verify(() -> CommandUtility.executeCommand(
                     Arrays.asList("ffprobe", "-v", "quiet",
-                            "-show_entries", "stream=codec_type,codec_name,height,bit_rate,index:stream_tags=language",
+                            "-show_entries", "stream=codec_type,codec_name,height,bit_rate,sample_aspect_ratio," +
+                            "display_aspect_ratio,channels,channel_layout,index:stream_tags=language",
                             mockedInput.toString()), 0));
             assertEquals(EncodingOperation.COPY, encodeOrCopy);
         }
@@ -151,13 +333,17 @@ public class AVInfoServiceTest {
             options.setInputPath(mockedInput);
             mockedStatic.when(() -> CommandUtility.executeCommand(anyList(), anyInt())).thenReturn(
                     "[STREAM]\n" +
-                            "index=0\n" +
-                            "codec_name=h264\n" +
-                            "codec_type=video\n" +
-                            "height=480\n" +
-                            "bit_rate=923373\n" +
-                            "TAG:language=eng\n" +
-                            "[/STREAM]\n");
+                    "index=0\n" +
+                    "codec_name=h264\n" +
+                    "codec_type=video\n" +
+                    "height=480\n" +
+                    "sample_aspect_ratio=73728:75913\n" +
+                    "display_aspect_ratio=98304:75913\n" +
+                    "bit_rate=923373\n" +
+                    "TAG:language=eng\n" +
+                    "[SIDE_DATA]\n" +
+                    "[/SIDE_DATA]\n" +
+                    "[/STREAM]\n");
 
             AVInfoService avInfoService = new AVInfoService();
             Map<String,String> avInfo = avInfoService.retrieveAudioVideoInfo(options);
@@ -165,7 +351,8 @@ public class AVInfoServiceTest {
 
             mockedStatic.verify(() -> CommandUtility.executeCommand(
                     Arrays.asList("ffprobe", "-v", "quiet",
-                            "-show_entries", "stream=codec_type,codec_name,height,bit_rate,index:stream_tags=language",
+                            "-show_entries", "stream=codec_type,codec_name,height,bit_rate,sample_aspect_ratio," +
+                            "display_aspect_ratio,channels,channel_layout,index:stream_tags=language",
                             mockedInput.toString()), 0));
             assertEquals(EncodingOperation.COPY, encodeOrCopy);
         }
@@ -179,20 +366,24 @@ public class AVInfoServiceTest {
             options.setInputPath(mockedInput);
             mockedStatic.when(() -> CommandUtility.executeCommand(anyList(), anyInt())).thenReturn(
                     "[STREAM]\n" +
-                    "index=0\n" +
-                    "codec_name=h264\n" +
-                    "codec_type=video\n" +
-                    "height=480\n" +
-                    "bit_rate=923373\n" +
-                    "TAG:language=eng\n" +
-                    "[/STREAM]\n" +
-                    "[STREAM]\n" +
-                    "index=1\n" +
-                    "codec_name=aac\n" +
-                    "codec_type=audio\n" +
-                    "bit_rate=120192\n" +
-                    "TAG:language=und\n" +
-                    "[/STREAM]\n");
+                        "index=0\n" +
+                        "codec_name=h264\n" +
+                        "codec_type=video\n" +
+                        "height=480\n" +
+                        "sample_aspect_ratio=8:9\n" +
+                        "display_aspect_ratio=4:3\n" +
+                        "bit_rate=923373\n" +
+                        "TAG:language=und\n" +
+                        "[/STREAM]\n" +
+                        "[STREAM]\n" +
+                        "index=1\n" +
+                        "codec_name=aac\n" +
+                        "codec_type=audio\n" +
+                        "channels=2\n" +
+                        "channel_layout=stereo\n" +
+                        "bit_rate=120192\n" +
+                        "TAG:language=und\n" +
+                        "[/STREAM]\n");
 
             AVInfoService avInfoService = new AVInfoService();
             Map<String,String> avInfo = avInfoService.retrieveAudioVideoInfo(options);
@@ -200,9 +391,52 @@ public class AVInfoServiceTest {
 
             mockedStatic.verify(() -> CommandUtility.executeCommand(
                     Arrays.asList("ffprobe", "-v", "quiet",
-                            "-show_entries", "stream=codec_type,codec_name,height,bit_rate,index:stream_tags=language",
+                            "-show_entries", "stream=codec_type,codec_name,height,bit_rate,sample_aspect_ratio," +
+                            "display_aspect_ratio,channels,channel_layout,index:stream_tags=language",
                             mockedInput.toString()), 0));
             assertEquals(Subtitles.SUBTITLES, subtitles);
+        }
+    }
+
+    @Test
+    public void testContainsMonoAudio() throws Exception {
+        try (MockedStatic<CommandUtility> mockedStatic = Mockito.mockStatic(CommandUtility.class)) {
+            Path mockedInput = testOutput.resolve("test_input.mov");
+            Mp44uOptions options = new Mp44uOptions();
+            options.setInputPath(mockedInput);
+            mockedStatic.when(() -> CommandUtility.executeCommand(anyList(), anyInt())).thenReturn(
+                    "[STREAM]\n" +
+                        "index=0\n" +
+                        "codec_name=h264\n" +
+                        "codec_type=video\n" +
+                        "height=480\n" +
+                        "sample_aspect_ratio=8:9\n" +
+                        "display_aspect_ratio=4:3\n" +
+                        "bit_rate=923373\n" +
+                        "TAG:language=und\n" +
+                        "[/STREAM]\n" +
+                        "[STREAM]\n" +
+                        "index=1\n" +
+                        "codec_name=aac\n" +
+                        "codec_type=audio\n" +
+                        "channels=1\n" +
+                        "channel_layout=stereo\n" +
+                        "bit_rate=120192\n" +
+                        "TAG:language=und\n" +
+                        "[/STREAM]\n");
+
+            AVInfoService avInfoService = new AVInfoService();
+            Map<String,String> avInfo = avInfoService.retrieveAudioVideoInfo(options);
+            boolean containsAudio = avInfoService.containsAudio(avInfo);
+            boolean monoAudio = avInfoService.monoAudio(avInfo);
+
+            mockedStatic.verify(() -> CommandUtility.executeCommand(
+                    Arrays.asList("ffprobe", "-v", "quiet",
+                            "-show_entries", "stream=codec_type,codec_name,height,bit_rate,sample_aspect_ratio," +
+                                    "display_aspect_ratio,channels,channel_layout,index:stream_tags=language",
+                            mockedInput.toString()), 0));
+            assertTrue(containsAudio);
+            assertTrue(monoAudio);
         }
     }
 }

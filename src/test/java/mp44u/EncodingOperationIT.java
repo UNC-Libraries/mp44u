@@ -8,10 +8,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 
+import java.io.UnsupportedEncodingException;
 import java.nio.file.Path;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.slf4j.LoggerFactory.getLogger;
 
 public class EncodingOperationIT {
@@ -22,6 +23,76 @@ public class EncodingOperationIT {
     @BeforeEach
     public void setup() throws Exception {
         service = new AVInfoService();
+    }
+
+    @Test
+    public void testGetAudioEncodableAac() throws Exception {
+        Path testFile = Path.of("src/test/resources/3AudioTrack.aiff");
+        Mp44uOptions options = new Mp44uOptions();
+        options.setInputPath(testFile);
+
+        Map<String,String> avInfo = service.retrieveAudioVideoInfo(options);
+        service.audioEncodable(avInfo);
+    }
+
+    @Test
+    public void testGetVideoEncodableMov() throws Exception {
+        Path testFile = Path.of("src/test/resources/AMEN.MOV");
+        Mp44uOptions options = new Mp44uOptions();
+        options.setInputPath(testFile);
+
+        Map<String,String> avInfo = service.retrieveAudioVideoInfo(options);
+        service.audioEncodable(avInfo);
+        service.videoEncodable(avInfo);
+    }
+
+    @Test
+    public void testGetVideoUnencodableMovUnknownCodecName() throws Exception {
+        Path testFile = Path.of("src/test/resources/IrvJoynerandScottHolme_h264_3000Kbps_720p.mov");
+        Mp44uOptions options = new Mp44uOptions();
+        options.setInputPath(testFile);
+
+        Map<String,String> avInfo = service.retrieveAudioVideoInfo(options);
+
+        var e = assertThrows(UnsupportedEncodingException.class, () -> {
+            service.audioEncodable(avInfo);
+        });
+        assertTrue(e.getMessage().contains("Audio not encodable: unknown codec_name"));
+
+        var e1 = assertThrows(UnsupportedEncodingException.class, () -> {
+            service.videoEncodable(avInfo);
+        });
+        assertTrue(e1.getMessage().contains("Video not encodable: unknown codec_name"));
+    }
+
+    @Test
+    public void testGetVideoUnencodableCodecType() throws Exception {
+        Path testFile = Path.of("src/test/resources/IrvJoynerandScottHolmes-fullMPEG2_WMV_3000Kbps_720p.wmv");
+        Mp44uOptions options = new Mp44uOptions();
+        options.setInputPath(testFile);
+
+        Map<String,String> avInfo = service.retrieveAudioVideoInfo(options);
+        service.audioEncodable(avInfo);
+
+        var e = assertThrows(UnsupportedEncodingException.class, () -> {
+            service.videoEncodable(avInfo);
+        });
+        assertTrue(e.getMessage().contains("Video not encodable: unknown aspect_ratio"));
+    }
+
+    @Test
+    public void testGetVideoEncodableAudioUncodableMov() throws Exception {
+        Path testFile = Path.of("src/test/resources/amen_noaudio.mov");
+        Mp44uOptions options = new Mp44uOptions();
+        options.setInputPath(testFile);
+
+        Map<String,String> avInfo = service.retrieveAudioVideoInfo(options);
+        service.videoEncodable(avInfo);
+
+        var e = assertThrows(UnsupportedEncodingException.class, () -> {
+            service.audioEncodable(avInfo);
+        });
+        assertTrue(e.getMessage().contains("Audio not encodable: unknown codec_name"));
     }
 
     @Test
