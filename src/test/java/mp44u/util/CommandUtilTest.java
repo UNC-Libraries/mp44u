@@ -51,7 +51,7 @@ public class CommandUtilTest {
 
         // Verify results
         assertTrue(result.contains("standard output\n"));
-        assertFalse(result.contains("error output\n"));
+        assertTrue(result.contains("error output\n"));
     }
 
     @Test

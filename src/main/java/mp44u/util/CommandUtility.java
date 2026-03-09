@@ -53,7 +53,7 @@ public class CommandUtility {
 
         try {
             executor.execute(cmdLine);
-            return outputStream.toString();
+            return outputStream + "\n" + errorStream;
         } catch (ExecuteException e) {
             String output = outputStream.toString();
             int exitValue = e.getExitValue();
