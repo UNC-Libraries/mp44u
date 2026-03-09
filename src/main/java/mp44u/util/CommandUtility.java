@@ -38,7 +38,7 @@ public class CommandUtility {
     public static String executeCommand(List<String> command, int maxTimeoutSeconds) {
         log.debug("Executing command with timeout {}s: {}", maxTimeoutSeconds, String.join(" ", command));
         CommandLine cmdLine = CommandLine.parse(command.getFirst());
-        cmdLine.addArguments(command.subList(1, command.size()).toArray(new String[0]));
+        command.subList(1, command.size()).forEach(arg -> cmdLine.addArgument(arg, false));
 
         DefaultExecutor executor = DefaultExecutor.builder().get();
         ExecuteWatchdog watchdog = null;
