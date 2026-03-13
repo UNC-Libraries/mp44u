@@ -41,7 +41,7 @@ public class AVInfoService {
         String v = "-v";
         String quiet = "quiet";
         String showEntries = "-show_entries";
-        String entries = "stream=codec_type,codec_name,height,bit_rate," +
+        String entries = "stream=codec_type,codec_name,width,height,bit_rate," +
                 "sample_aspect_ratio,display_aspect_ratio,channels,channel_layout,index:stream_tags=language";
 
         List<String> command = new ArrayList<>(Arrays.asList(ffprobe, v, quiet,
@@ -93,20 +93,40 @@ public class AVInfoService {
     }
 
     /**
-     * Determine if the file's video is encodable (has known codec_name, sample_aspect_ratio, and display_aspect_ratio)
+     * Determine if the file's video is encodable (has known codec_name, sample_aspect_ratio, display_aspect_ratio,
+     * or width and height)
      * @param avInfo
      */
     public void videoEncodable(Map<String, String> avInfo) throws UnsupportedEncodingException {
         if (avInfo.containsKey("video_codec_type")) {
-            if ((!avInfo.containsKey("video_sample_aspect_ratio")
-                || !avInfo.get("video_sample_aspect_ratio").matches("[1-9]\\d*:[1-9]\\d*"))
-                || (!avInfo.containsKey("video_display_aspect_ratio")
-                || !avInfo.get("video_display_aspect_ratio").matches("[1-9]\\d*:[1-9]\\d*"))) {
+            if (!hasAspectRatio(avInfo) || !hasWidthHeight(avInfo)) {
                 throw new UnsupportedEncodingException("Video not encodable: unknown aspect_ratio");
             }
         } else {
             throw new UnsupportedEncodingException("Video not encodable: unknown codec_name");
         }
+    }
+
+    /**
+     * Determine if the file's video has aspect ratio
+     * @param avInfo
+     * @return boolean
+     */
+    private boolean hasAspectRatio(Map<String, String> avInfo) {
+        return (avInfo.containsKey("video_sample_aspect_ratio")
+                && avInfo.get("video_sample_aspect_ratio").matches("[1-9]\\d*:[1-9]\\d*"))
+                || (avInfo.containsKey("video_display_aspect_ratio")
+                && avInfo.get("video_display_aspect_ratio").matches("[1-9]\\d*:[1-9]\\d*"));
+    }
+
+    /**
+     * Determine if the file's video has width and height to calculate aspect ratio
+     * @param avInfo
+     * @return boolean
+     */
+    private boolean hasWidthHeight(Map<String, String> avInfo) {
+        return (avInfo.containsKey("video_width") && avInfo.get("video_width").matches("[1-9]\\d*"))
+                && (avInfo.containsKey("video_height") && avInfo.get("video_height").matches("[1-9]\\d*"));
     }
 
     /**
