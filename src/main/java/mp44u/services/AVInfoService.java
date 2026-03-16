@@ -99,7 +99,7 @@ public class AVInfoService {
      */
     public void videoEncodable(Map<String, String> avInfo) throws UnsupportedEncodingException {
         if (avInfo.containsKey("video_codec_type")) {
-            if (!hasAspectRatio(avInfo) || !hasWidthHeight(avInfo)) {
+            if (!hasAspectRatio(avInfo) && !hasWidthHeight(avInfo)) {
                 throw new UnsupportedEncodingException("Video not encodable: unknown aspect_ratio");
             }
         } else {

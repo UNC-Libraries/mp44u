@@ -167,7 +167,7 @@ public class AVInfoServiceTest {
     }
 
     @Test
-    public void testGetVideoUnencodableUnknownAspectRatios() throws Exception {
+    public void testGetVideoEncodableUnknownAspectRatiosKnownWidthHeight() throws Exception {
         try (MockedStatic<CommandUtility> mockedStatic = Mockito.mockStatic(CommandUtility.class)) {
             Path mockedInput = testOutput.resolve("test_input.mp4");
             Mp44uOptions options = new Mp44uOptions();
@@ -204,22 +204,18 @@ public class AVInfoServiceTest {
             AVInfoService avInfoService = new AVInfoService();
             Map<String,String> avInfo = avInfoService.retrieveAudioVideoInfo(options);
             avInfoService.audioEncodable(avInfo);
+            avInfoService.videoEncodable(avInfo);
 
             mockedStatic.verify(() -> CommandUtility.executeCommand(
                     Arrays.asList("ffprobe", "-v", "quiet",
                             "-show_entries", "stream=codec_type,codec_name,width,height,bit_rate,sample_aspect_ratio," +
                             "display_aspect_ratio,channels,channel_layout,index:stream_tags=language",
                             mockedInput.toString()), 0));
-
-            var e = assertThrows(UnsupportedEncodingException.class, () -> {
-                avInfoService.videoEncodable(avInfo);
-            });
-            assertTrue(e.getMessage().contains("Video not encodable: unknown aspect_ratio"));
         }
     }
 
     @Test
-    public void testGetVideoUnencodableHasNoWidth() throws Exception {
+    public void testGetVideoUnencodableUnknownAspectRatiosUnknownWidth() throws Exception {
         try (MockedStatic<CommandUtility> mockedStatic = Mockito.mockStatic(CommandUtility.class)) {
             Path mockedInput = testOutput.resolve("test_input.mp4");
             Mp44uOptions options = new Mp44uOptions();

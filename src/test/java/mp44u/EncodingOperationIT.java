@@ -66,18 +66,14 @@ public class EncodingOperationIT {
     }
 
     @Test
-    public void testGetVideoUnencodableCodecType() throws Exception {
+    public void testGetVideoEncodableUnknownAspectRatiosKnownWidthHeight() throws Exception {
         Path testFile = Path.of("src/test/resources/IrvJoynerandScottHolmes-fullMPEG2_WMV_3000Kbps_720p.wmv");
         Mp44uOptions options = new Mp44uOptions();
         options.setInputPath(testFile);
 
         Map<String,String> avInfo = service.retrieveAudioVideoInfo(options);
         service.audioEncodable(avInfo);
-
-        var e = assertThrows(UnsupportedEncodingException.class, () -> {
-            service.videoEncodable(avInfo);
-        });
-        assertTrue(e.getMessage().contains("Video not encodable: unknown aspect_ratio"));
+        service.videoEncodable(avInfo);
     }
 
     @Test
