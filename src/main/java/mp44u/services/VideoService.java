@@ -54,8 +54,10 @@ public class VideoService {
         EncodingOperation videoEncodingOperation = avInfoService.getVideoEncodingOperation(avInfo);
         EncodingOperation audioEncodingOperation = avInfoService.getAudioEncodingOperation(avInfo);
         Subtitles subtitles = avInfoService.getSubtitles(avInfo);
-        avInfoService.audioEncodable(avInfo);
         boolean containsAudio = avInfoService.containsAudio(avInfo);
+        if (containsAudio) {
+            avInfoService.audioEncodable(avInfo);
+        }
         boolean monoAudio = avInfoService.monoAudio(avInfo);
         ffmpegEncodeToMp4(options, videoEncodingOperation, audioEncodingOperation, subtitles, containsAudio, monoAudio);
     }
