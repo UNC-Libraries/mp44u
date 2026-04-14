@@ -51,15 +51,26 @@ public class VideoService {
 
         avInfoService.videoEncodable(avInfo);
 
-        ffmpegEncodeToMp4(options, avInfo);
+        EncodingOperation videoEncodingOperation = avInfoService.getVideoEncodingOperation(avInfo);
+        EncodingOperation audioEncodingOperation = avInfoService.getAudioEncodingOperation(avInfo);
+        Subtitles subtitles = avInfoService.getSubtitles(avInfo);
+        boolean containsAudio = avInfoService.containsAudio(avInfo);
+        boolean monoAudio = false;
+        if (containsAudio) {
+            avInfoService.audioEncodable(avInfo);
+            monoAudio = avInfoService.monoAudio(avInfo);
+        }
+        ffmpegEncodeToMp4(options, videoEncodingOperation, audioEncodingOperation, subtitles, containsAudio, monoAudio);
     }
 
     /**
      * Run ffmpeg and convert/copy video file to mp4
-     * @param options, avInfo
+     * @param options
      * @return path to mp4 file
      */
-    public Path ffmpegEncodeToMp4(Mp44uOptions options, Map<String, String> avInfo) throws Exception {
+    public Path ffmpegEncodeToMp4(Mp44uOptions options, EncodingOperation videoEncodingOperation,
+                                  EncodingOperation audioEncodingOperation, Subtitles subtitles,
+                                  boolean containsAudio, boolean monoAudio) throws Exception {
         String inputFile = options.getInputPath().toString();
         String input = "-i";
         Path outputPath = options.getOutputPath();
@@ -73,12 +84,12 @@ public class VideoService {
 
 
         // get subtitles
-        if (avInfoService.getSubtitles(avInfo).equals(Subtitles.SUBTITLES)) {
+        if (subtitles.equals(Subtitles.SUBTITLES)) {
             command.addAll(SUBTITLES);
         }
 
         // encode or copy video
-        if (avInfoService.getVideoEncodingOperation(avInfo).equals(EncodingOperation.ENCODE)) {
+        if (videoEncodingOperation.equals(EncodingOperation.ENCODE)) {
             command.addAll(ENCODE);
             command.add(THREADS);
             command.add(String.valueOf(options.getThreads()));
@@ -87,15 +98,14 @@ public class VideoService {
         }
 
         // if audio exists, encode or copy audio
-        if (avInfoService.containsAudio(avInfo)) {
-            avInfoService.audioEncodable(avInfo);
-            if (avInfoService.getAudioEncodingOperation(avInfo).equals(EncodingOperation.ENCODE)) {
+        if (containsAudio) {
+            if (audioEncodingOperation.equals(EncodingOperation.ENCODE)) {
                 command.addAll(AudioService.ENCODE);
                 command.add(THREADS);
                 command.add(String.valueOf(options.getThreads()));
 
                 // for audio_channel = 1, add -ac 2 to prevent encoding error
-                if (avInfoService.monoAudio(avInfo)) {
+                if (monoAudio) {
                     command.addAll(AudioService.CHANNELS);
                 }
             } else {
