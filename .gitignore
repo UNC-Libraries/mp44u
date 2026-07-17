@@ -18,3 +18,7 @@ buildNumber.properties
 
 .idea
 .DS_Store
+.settings/
+*.iml
+.idea/
+.m2/
